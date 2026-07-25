@@ -177,7 +177,10 @@ namespace BotServer.API
 
         public async Task GetAutorizationUrl(bool local = false)
         {
-            if(local == true)
+
+            var connection = new List<string> { "local", "remote" };
+            var con = connection[1];
+            if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";
             }
