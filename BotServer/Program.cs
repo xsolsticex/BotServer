@@ -43,7 +43,7 @@ namespace BotServer
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
-                db.Database.Migrate();
+                db.Database.EnsureCreated();
             }
 
             app.UseStaticFiles();
@@ -56,7 +56,7 @@ namespace BotServer
                 
                 var connection = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = connection[1];
+                var cnt = connection[0];
                 
                 var redirect = "http://localhost:8000/confirm";
                 
