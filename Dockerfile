@@ -11,6 +11,9 @@ RUN dotnet publish -c Release -o /app/publish
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=build /app/publish .
