@@ -145,11 +145,13 @@ namespace BotServer.API
         public async Task GetAutorizationUrl()
         {
 
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "https://id.twitch.tv/oauth2/authorize?client_id=b0r3olttxet0jp8h46orilv8kqsp0t&redirect_uri=https://botserver-qccm.onrender.com/confirm&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true",
-                UseShellExecute = true
-            });
+            Console.WriteLine("Auth URL : https://id.twitch.tv/oauth2/authorize?client_id=b0r3olttxet0jp8h46orilv8kqsp0t&redirect_uri=https://botserver-qccm.onrender.com/confirm&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true");
+
+            //Process.Start(new ProcessStartInfo
+            //{
+            //    FileName = "https://id.twitch.tv/oauth2/authorize?client_id=b0r3olttxet0jp8h46orilv8kqsp0t&redirect_uri=https://botserver-qccm.onrender.com/confirm&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true",
+            //    UseShellExecute = true
+            //});
 
             await Task.Delay(8000);
         }
