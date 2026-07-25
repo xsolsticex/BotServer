@@ -24,7 +24,15 @@ namespace BotServer.TwitchBotClient.SignalRClient
 
         public async Task StartClient()
         {
-            await connection.StartAsync();
+            try
+            {
+                await Task.Delay(5000); // Espera a que el servidor termine de arrancar
+                await connection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
 
