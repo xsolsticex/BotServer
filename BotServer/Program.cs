@@ -50,6 +50,14 @@ namespace BotServer
             
             app.MapGet("/chat/{username}", (string username) => { return Results.File("index.html", "text/html"); });
 
+            app.Map("/connect", () =>
+            {
+                var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
+                var redirect = Environment.GetEnvironmentVariable("REDIRECT_URL");
+                return Results.Redirect($"https://id.twitch.tv/oauth2/authorize?client_id={client_id}&redirect_uri={redirect}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true");
+
+            });
+
             app.MapGet("/confirm", async (HttpContext context,[FromKeyedServices] TwitchBotApi api, [FromKeyedServices] UsersService userService) => {
                 
                 var code = context.Request.Query["code"];

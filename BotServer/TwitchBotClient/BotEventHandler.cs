@@ -83,7 +83,8 @@ namespace BotServer.TwitchBotClient
 
                 case "join":
                     await _client.JoinChannelAsync(username);
-                    await _client.SendMessageAsync(channel, "Para dar permisos usa el siguiente enlace: www.");
+                    
+                    await _client.SendMessageAsync(channel, "Para dar permisos usa el siguiente enlace: https://botserver-qccm.onrender.com/connect");
                     break;
             }
 
