@@ -105,7 +105,7 @@ namespace BotServer.TwitchBotClient
                     await _client.JoinChannelAsync(username);
 
                     var connection = new List<string> { "local", "remote" };
-                    var con = connection[0];
+                    var con = connection[1];
                     var urlOBS = $"http://localhost:8000/chat/{username}";
                     var urlAuth = $"http://localhost:8000/connect";
 
