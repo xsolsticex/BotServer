@@ -51,7 +51,7 @@ namespace BotServer.TwitchBotClient
 
             var fac = fscope.ServiceProvider.GetRequiredService<TwitchClientFactory>();
 
-            _client = await fac.Create(main);
+            _client = await fac.Create(main,true);
       
             RegisterEvents();
             _events.Initialize(_client);

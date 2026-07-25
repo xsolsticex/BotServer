@@ -1,4 +1,5 @@
 ﻿using BotServer.API.Models;
+using BotServer.Database.Models;
 using BotServer.Database.Services;
 using System.Diagnostics;
 using System.Security.AccessControl;
@@ -13,7 +14,7 @@ namespace BotServer.API
         private TwitchAPI _api;
         private IServiceScopeFactory _service;
 
-        private readonly string redirectUri = "https://botserver-qccm.onrender.com/confirm";
+        private string redirectUri = "https://botserver-qccm.onrender.com/confirm";
 
         public TwitchBotApi(TwitchAPI api,IServiceScopeFactory scope)
         {
@@ -61,7 +62,7 @@ namespace BotServer.API
             try
             {
           
-                var token = await GetValidToken(username);
+                var token = await GetValidToken("xhipibotx");
                 var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
 
                 if (user is not null)
@@ -80,17 +81,18 @@ namespace BotServer.API
 
         }
 
-        public async Task<string> GetUserId(string username)
+        public async Task<Users> GetUserData(string username)
         {
             try
             {
 
-                var token = await GetValidToken(username);
+                var token = await GetValidToken("xhipibotx");
                 var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
 
                 if (user is not null)
                 {
-                    return user.Users.First().Id;
+                    var u = user.Users.FirstOrDefault();
+                    return new Users { Profile = u.ProfileImageUrl, TwitchId = u.Id, Username = u.Login };
                 }
 
             }
@@ -173,8 +175,12 @@ namespace BotServer.API
         }
 
 
-        public async Task GetAutorizationUrl()
+        public async Task GetAutorizationUrl(bool local = false)
         {
+            if(local == true)
+            {
+                redirectUri = "http://localhost:8000/confirm";
+            }
 
             Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true");
 

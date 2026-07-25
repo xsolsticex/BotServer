@@ -51,6 +51,8 @@ namespace BotServer.TwitchBotClient
             var channel = e.ChatMessage.Channel;
             var color = e.ChatMessage.HexColor;
             var user = e.ChatMessage.Username;
+
+            if (message.StartsWith("!join")) return;
             //Pendiende de añadir perfil de usuario
 
             var scope = _scope.CreateScope();
@@ -58,9 +60,12 @@ namespace BotServer.TwitchBotClient
 
             var usu = await db.GetUser(user);
 
-
             var profile = usu.Profile;
-            //var profile = await _api.GetUserProfile(user);
+
+            if (profile == null)
+            {
+                profile = await _api.GetUserProfile(user);
+            }
 
             var data = new Dictionary<string, string>();
             data.Add("username", user);
@@ -99,9 +104,20 @@ namespace BotServer.TwitchBotClient
                 case "join":
                     await _client.JoinChannelAsync(username);
 
-                    await _client.SendMessageAsync(channel, $"Añade a tu OBS la fuente como navegador: https://botserver-qccm.onrender.com/chat/{username}");
+                    var connection = new List<string> { "local", "remote" };
+                    var con = connection[0];
+                    var urlOBS = $"http://localhost:8000/chat/{username}";
+                    var urlAuth = $"http://localhost:8000/connect";
 
-                    await _client.SendMessageAsync(channel, "Para dar permisos usa el siguiente enlace: https://botserver-qccm.onrender.com/connect");
+                    if(con == "remote")
+                    {
+                        urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
+                        urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                    }
+
+                    await _client.SendMessageAsync(channel, $"Añade a tu OBS la fuente como navegador: {urlOBS}");
+
+                    await _client.SendMessageAsync(channel, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
                     break;
             }
 
@@ -121,12 +137,11 @@ namespace BotServer.TwitchBotClient
 
             if (exists == null)
             {
-                var userid = await _api.GetUserId(usu);
+                var user = await _api.GetUserData(usu);
 
                 var profile = await _api.GetUserProfile(usu);
 
 
-                Users user = new Users { Profile = profile, TwitchId = userid,Username=usu };
                 await db.CreateUser(user);
 
             }

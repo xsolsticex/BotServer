@@ -18,8 +18,9 @@ namespace BotServer.Database.Services
         {
             var user = await _dbContext.Users.Include(u => u.Tokens).FirstOrDefaultAsync(u => u.Username.ToLower() == name.ToLower());
 
-            if(user!= null)
+            if(user!= null && user.Tokens != null)
             {
+
                 return new UserToken { AccessToken = user.Tokens.AccessToken, RefreshToken = user.Tokens.RefreshToken };
             }
             return null;
@@ -51,7 +52,7 @@ namespace BotServer.Database.Services
 
         public async Task CreateUser(UserToken user)
         {
-            var exists = _dbContext.Users.Where(u => u.Username == user.Username).FirstOrDefault();
+            var exists = _dbContext.Users.Where(u => u.Username.ToLower() == user.Username.ToLower()).FirstOrDefault();
 
             if (exists == null)
             {
@@ -64,22 +65,49 @@ namespace BotServer.Database.Services
                 await _dbContext.SaveChangesAsync();
 
             }
+            else
+            {
+
+                await UpdateUser(user);
+            }
 
 
 
 
         }
 
-        public async Task<UserToken> UpdateUser(UserToken user)
+
+        public async Task AddTokens(UserToken user)
         {
             var exists = await _dbContext.Users.Where(u => u.Username == user.Username).FirstOrDefaultAsync();
             exists.Profile = user.Profile;
             UserTokens f;
 
+            f = new UserTokens {AccessToken=user.AccessToken,RefreshToken=user.RefreshToken,UsersId = exists.Id };
+
+            await _dbContext.SaveChangesAsync();
+
+        }
+
+
+        public async Task<UserToken> UpdateUser(UserToken user)
+        {
+            var exists = await _dbContext.Users.Where(u => u.Username.ToLower() == user.Username.ToLower()).FirstOrDefaultAsync();
+            exists.Profile = user.Profile;
+            UserTokens f;
+
             f = await _dbContext.Tokens.Where(p => p.UsersId == exists.Id).FirstOrDefaultAsync();
-            f.AccessToken = user.AccessToken;
-            f.RefreshToken = user.RefreshToken;
-            
+
+            if (f == null)
+            {
+               f = new UserTokens { AccessToken = user.AccessToken, RefreshToken = user.RefreshToken, UsersId = exists.Id };
+                await _dbContext.Tokens.AddAsync(f);
+            }
+            else
+            {
+                f.AccessToken = user.AccessToken;
+                f.RefreshToken = user.RefreshToken;
+            }
 
             await _dbContext.SaveChangesAsync();
 

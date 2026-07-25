@@ -21,7 +21,7 @@ namespace BotServer.TwitchBotClient
 
         
         }
-        public async Task<TwitchClient> Create(string username)
+        public async Task<TwitchClient> Create(string username,bool local = false)
         {
 
             var loggerFactory = LoggerFactory.Create(c => c.AddConsole());
@@ -29,7 +29,7 @@ namespace BotServer.TwitchBotClient
 
             if(user == null)
             {
-                await _api.GetAutorizationUrl();
+                await _api.GetAutorizationUrl(local);
                 do
                 {
                     await Task.Delay(1000);
