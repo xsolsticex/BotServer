@@ -28,13 +28,34 @@ namespace BotServer.Database.Services
         }
 
 
+        public async Task CreateUser(Users user)
+        {
+            var exists = _dbContext.Users.Where(u => u.Username == user.Username).FirstOrDefault();
+
+            if (exists == null)
+            {
+               // Users userEntity = new Users { TwitchId = user.UserId, Username = user.Username,Profile=user.Profile };
+                await _dbContext.Users.AddAsync(user);
+                await _dbContext.SaveChangesAsync();
+
+                //var tokenEntity = new UserTokens { UsersId = userEntity.Id, AccessToken = user.AccessToken, RefreshToken = user.RefreshToken };
+                //await _dbContext.Tokens.AddAsync(tokenEntity);
+                //await _dbContext.SaveChangesAsync();
+
+            }
+
+
+
+
+        }
+
         public async Task CreateUser(UserToken user)
         {
             var exists = _dbContext.Users.Where(u => u.Username == user.Username).FirstOrDefault();
 
             if (exists == null)
             {
-                Users userEntity = new Users { TwitchId = user.UserId, Username = user.Username,Profile=user.Profile };
+                Users userEntity = new Users { TwitchId = user.UserId, Username = user.Username, Profile = user.Profile };
                 await _dbContext.Users.AddAsync(userEntity);
                 await _dbContext.SaveChangesAsync();
 

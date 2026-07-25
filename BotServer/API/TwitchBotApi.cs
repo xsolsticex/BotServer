@@ -80,6 +80,32 @@ namespace BotServer.API
 
         }
 
+        public async Task<string> GetUserId(string username)
+        {
+            try
+            {
+
+                var token = await GetValidToken(username);
+                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
+
+                if (user is not null)
+                {
+                    return user.Users.First().Id;
+                }
+
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+            return null;
+
+        }
+
+
+
 
 
         public async Task<UserToken> RefreshToken(string refreshtoken)

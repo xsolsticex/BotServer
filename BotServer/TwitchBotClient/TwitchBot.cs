@@ -39,6 +39,8 @@ namespace BotServer.TwitchBotClient
             _client.OnJoinedChannel += _events.OnChannelJoined;
             _client.OnMessageReceived += _events.onMessageReceived;
             _client.OnChatCommandReceived += _events.onCommandReceived;
+            _client.OnUserJoined += _events.onUserJoined;
+            
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
