@@ -78,7 +78,8 @@ namespace BotServer.TwitchBotClient.SignalRClient
                         // 3. Validación de estado antes de enviar para evitar crashes
             if (connection.State != HubConnectionState.Connected)
             {
-                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
+                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}"); 
+                Console.WriteLine("Estado Actual: "+connection.State);
                 return;
             }
 
