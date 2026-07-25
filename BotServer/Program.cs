@@ -40,11 +40,11 @@ namespace BotServer
 
             var app = builder.Build();
 
-            //using (var scope = app.Services.CreateScope())
-            //{
-            //    var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
-            //    db.Database.Migrate();
-            //}
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
+                db.Database.Migrate();
+            }
 
             app.UseStaticFiles();
             app.UseWebSockets();
