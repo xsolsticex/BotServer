@@ -16,8 +16,8 @@ namespace BotServer
         public static void Main(string[] args)
         {
             var path = AppContext.BaseDirectory;
-            //var dbPath = "/data/twitch.db";
-            var dbPath = Path.Combine(path,"twitch.db");
+            var dbPath = "/data/twitch.db";
+            //var dbPath = Path.Combine(path,"twitch.db");
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSignalR(options =>
             {
