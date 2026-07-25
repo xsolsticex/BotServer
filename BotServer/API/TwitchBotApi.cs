@@ -1,0 +1,158 @@
+﻿using BotServer.API.Models;
+using BotServer.Database.Services;
+using System.Diagnostics;
+using System.Security.AccessControl;
+using TwitchLib.Api;
+using TwitchLib.Api.Auth;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
+
+namespace BotServer.API
+{
+    public class TwitchBotApi
+    {
+        private TwitchAPI _api;
+        private IServiceScopeFactory _service;
+
+        public TwitchBotApi(TwitchAPI api,IServiceScopeFactory scope)
+        {
+            _api = api;
+            _service = scope;
+            _api.Settings.ClientId = "b0r3olttxet0jp8h46orilv8kqsp0t";
+            _api.Settings.Secret = "174bgzjs4vr4llf9ww6gmagf2vznk0";
+            
+            
+
+        }
+
+
+        public async Task<UserToken> GetTokenWithCode(string code)
+        {
+            AuthCodeResponse token = await _api.Auth.GetAccessTokenFromCodeAsync(code, clientId: _api.Settings.ClientId, clientSecret: _api.Settings.Secret, redirectUri: "http://localhost:8000/confirm");
+            if (token is not null)
+            {
+                return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
+        public async Task<ValidateAccessTokenResponse> ValidateToken(string token)
+        {
+            var isValid = await _api.Auth.ValidateAccessTokenAsync(accessToken: token);
+            
+            if(isValid is not null)
+            {
+                return isValid;
+            }
+            return null;
+
+            
+        }
+
+
+        public async Task<string> GetUserProfile(string username)
+        {
+            try
+            {
+          
+                var token = await GetValidToken(username);
+                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
+
+                if (user is not null)
+                {
+                    return user.Users.First().ProfileImageUrl;
+                }
+          
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+            return null;
+
+        }
+
+
+
+        public async Task<UserToken> RefreshToken(string refreshtoken)
+        {
+            var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
+            var client_secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+
+            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, client_secret, client_id );
+
+            return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
+        }
+
+
+        public async Task<User> GetUser(string twitch_id)
+        {
+            User user = _api.Helix.Users.GetUsersAsync().Result.Users.Where(p => p.Id == twitch_id).FirstOrDefault();
+
+            return user;
+        }
+
+        public async Task<UserToken> GetValidToken(UserToken token)
+        {
+            var isValid = await ValidateToken(token.AccessToken);
+
+            if (isValid == null)
+            {
+                token = await RefreshToken(token.RefreshToken);
+                isValid = await ValidateToken(token.AccessToken);
+
+            }
+
+
+            _api.Settings.AccessToken = token.AccessToken;
+
+            token.Username = isValid.Login;
+            token.UserId = isValid.UserId;
+
+            return token;
+        }
+
+        public async Task<UserToken> GetValidToken(string username)
+        {
+            var service = _service.CreateScope();
+            var tokenService = service.ServiceProvider.GetRequiredService<TokensService>();    
+            var token = await tokenService.GetAccessToken(username);
+            var isValid = await ValidateToken(token.AccessToken);
+            
+            if (isValid == null)
+            {
+
+                token = await RefreshToken(token.RefreshToken);
+                isValid = await ValidateToken(token.AccessToken);
+
+            }
+
+
+            _api.Settings.AccessToken = token.AccessToken;
+
+            token.Username = isValid.Login;
+            token.UserId = isValid.UserId;
+
+            return token;
+        }
+
+
+        public async Task GetAutorizationUrl()
+        {
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://id.twitch.tv/oauth2/authorize?client_id=b0r3olttxet0jp8h46orilv8kqsp0t&redirect_uri=http://localhost:8000/confirm&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true",
+                UseShellExecute = true
+            });
+
+            await Task.Delay(8000);
+        }
+
+    }
+}
