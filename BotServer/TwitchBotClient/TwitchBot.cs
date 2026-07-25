@@ -44,17 +44,18 @@ namespace BotServer.TwitchBotClient
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _signalR.StartClient();
+            var main = Environment.GetEnvironmentVariable("MAIN_CHANNEL");
             using var fscope = _scope.CreateScope();
 
             var fac = fscope.ServiceProvider.GetRequiredService<TwitchClientFactory>();
 
-            _client = await fac.Create("xhipicolgaox");
+            _client = await fac.Create(main);
       
             RegisterEvents();
             _events.Initialize(_client);
 
             await _client.ConnectAsync();
-            await _client.JoinChannelAsync("xhipicolgaox");
+            await _client.JoinChannelAsync(main);
 
             try
             {

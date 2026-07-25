@@ -72,11 +72,21 @@ namespace BotServer.TwitchBotClient
         {
             var command = e.Command.Name;
             var channel = e.ChatMessage.Channel;
-            if (command == "hora")
+            var username = e.ChatMessage.Username;
+
+            switch (command)
             {
-                var time = DateTime.Now.ToString();
-                await _client.SendMessageAsync(channel, time);
+                case "hora":
+                    var time = DateTime.Now.ToString();
+                    await _client.SendMessageAsync(channel, time);
+                    break;
+
+                case "join":
+                    await _client.JoinChannelAsync(username);
+                    await _client.SendMessageAsync(channel, "Para dar permisos usa el siguiente enlace: www.");
+                    break;
             }
+
             Console.WriteLine(command);
         }
     }
