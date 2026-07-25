@@ -13,12 +13,15 @@ namespace BotServer.API
         private TwitchAPI _api;
         private IServiceScopeFactory _service;
 
+        private readonly string redirectUri = "https://botserver-qccm.onrender.com/confirm";
+
         public TwitchBotApi(TwitchAPI api,IServiceScopeFactory scope)
         {
             _api = api;
             _service = scope;
-            _api.Settings.ClientId = "b0r3olttxet0jp8h46orilv8kqsp0t";
-            _api.Settings.Secret = "174bgzjs4vr4llf9ww6gmagf2vznk0";
+            _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID"); 
+            _api.Settings.Secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+  
             
             
 
@@ -81,10 +84,8 @@ namespace BotServer.API
 
         public async Task<UserToken> RefreshToken(string refreshtoken)
         {
-            var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-            var client_secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
 
-            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, client_secret, client_id );
+            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, _api.Settings.ClientId, _api.Settings.Secret );
 
             return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
         }
@@ -145,7 +146,7 @@ namespace BotServer.API
         public async Task GetAutorizationUrl()
         {
 
-            Console.WriteLine("Auth URL : https://id.twitch.tv/oauth2/authorize?client_id=b0r3olttxet0jp8h46orilv8kqsp0t&redirect_uri=https://botserver-qccm.onrender.com/confirm&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true");
+            Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages&response_type=code&force_verify=true");
 
             //Process.Start(new ProcessStartInfo
             //{
