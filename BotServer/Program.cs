@@ -17,6 +17,7 @@ namespace BotServer
         {
             var path = AppContext.BaseDirectory;
             var dbPath = "/data/twitch.db";
+            //var dbPath = Path.Combine(path,"twitch.db");
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSignalR(options =>
             {
@@ -39,11 +40,11 @@ namespace BotServer
 
             var app = builder.Build();
 
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
-                db.Database.Migrate();
-            }
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
+            //    db.Database.Migrate();
+            //}
 
             app.UseStaticFiles();
             app.UseWebSockets();

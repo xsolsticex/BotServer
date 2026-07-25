@@ -149,6 +149,10 @@ namespace BotServer.API
             var service = _service.CreateScope();
             var tokenService = service.ServiceProvider.GetRequiredService<TokensService>();    
             var token = await tokenService.GetAccessToken(username);
+
+            if (token == null)
+                throw new Exception($"No existe un token para el usuario '{username}'.");
+
             var isValid = await ValidateToken(token.AccessToken);
             
             if (isValid == null)

@@ -15,12 +15,27 @@ namespace BotServer.Database.Services
         }
 
 
-        public async Task<UserToken> GetAccessToken(string username)
+        public async Task<UserToken?> GetAccessToken(string username)
         {
-            var user = await _dbContext.Users.Where(p => p.Username.ToLower() == username.ToLower()).FirstOrDefaultAsync() ;
-            var tokens = _dbContext.Tokens.Where(x => x.UsersId == user.Id).FirstOrDefault();
+            var user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
-            return new UserToken {AccessToken= tokens.AccessToken,RefreshToken=tokens.RefreshToken,UserId=user.TwitchId,Username=username };
+            if (user == null)
+                return null;
+
+            var token = await _dbContext.Tokens
+                .FirstOrDefaultAsync(t => t.UsersId == user.Id);
+
+            if (token == null)
+                return null;
+
+            return new UserToken
+            {
+                AccessToken = token.AccessToken,
+                RefreshToken = token.RefreshToken,
+                UserId = user.TwitchId,
+                Username = username
+            };
         }
 
 
