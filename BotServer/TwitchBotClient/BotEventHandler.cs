@@ -97,8 +97,9 @@ namespace BotServer.TwitchBotClient
             switch (command)
             {
                 case "hora":
-                    var time = DateTime.Now.ToString();
-                    await _client.SendMessageAsync(channel, time);
+                    TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
+                    var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow,zona);
+                    await _client.SendMessageAsync(channel, time.ToString());
                     break;
 
                 case "join":
