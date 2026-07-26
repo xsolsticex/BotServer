@@ -31,5 +31,12 @@ namespace BotServer.Database.Services
             return channels;
 
         }
+
+        public async Task<JoinedChannels> FindChannel(string name)
+        {
+            var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name).FirstOrDefault();
+            return channel;
+
+        }
     }
 }

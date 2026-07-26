@@ -4,6 +4,7 @@ using BotServer.Database.Services;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BotServer.TwitchBotClient
 {
@@ -103,28 +104,43 @@ namespace BotServer.TwitchBotClient
                     break;
 
                 case "join":
-                    await _client.JoinChannelAsync(username);
 
                     var service = _scope.CreateScope();
 
                     var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
 
-                    await db.AddChannel(username);
+                    var exists = await db.FindChannel(username);
 
-                    var connection = new List<string> { "local", "remote" };
-                    var con = connection[1];
-                    var urlOBS = $"http://localhost:8000/chat/{username}";
-                    var urlAuth = $"http://localhost:8000/connect";
-
-                    if(con == "remote")
+                    if(exists == null)
                     {
-                        urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
-                        urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                        await _client.JoinChannelAsync(username);
+
+
+
+                        await db.AddChannel(username);
+
+                        var connection = new List<string> { "local", "remote" };
+                        var con = connection[1];
+                        var urlOBS = $"http://localhost:8000/chat/{username}";
+                        var urlAuth = $"http://localhost:8000/connect";
+
+                        if (con == "remote")
+                        {
+                            urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
+                            urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                        }
+
+                        await _client.SendMessageAsync(channel, $"Añade a tu OBS la fuente como navegador: {urlOBS}");
+
+                        await _client.SendMessageAsync(channel, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+
+                    }
+                    else
+                    {
+                        await _client.SendReplyAsync(channel,e.ChatMessage.UserId.ToString(), "Ya estoy unido a tu canal");
                     }
 
-                    await _client.SendMessageAsync(channel, $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
-                    await _client.SendMessageAsync(channel, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
                     break;
             }
 
