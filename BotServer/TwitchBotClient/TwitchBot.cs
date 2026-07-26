@@ -77,6 +77,7 @@ namespace BotServer.TwitchBotClient
             if(ch.Count == 0)
             {
                 ch.Add(main);
+                await db.AddChannel(main);
             }
 
             await JoinToChannels(ch);
