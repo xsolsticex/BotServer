@@ -24,38 +24,48 @@ namespace BotServer.TwitchBotClient
         public async Task<TwitchClient> Create(string username,bool local = false)
         {
 
-            var loggerFactory = LoggerFactory.Create(c => c.AddConsole());
-            var user = await _service.GetUser(username);
-
-            if(user == null)
+            try
             {
-                await _api.GetAutorizationUrl(local);
-                do
+                var loggerFactory = LoggerFactory.Create(c => c.AddConsole());
+                var user = await _service.GetUser(username);
+
+                if (user == null)
                 {
-                    await Task.Delay(1000);
-                    user = await _service.GetUser(username);
+                    await _api.GetAutorizationUrl(local);
+                    do
+                    {
+                        await Task.Delay(1000);
+                        user = await _service.GetUser(username);
+                    }
+                    while (user == null);
+
+
                 }
-                while (user == null);
+
+                var token = await _api.GetValidToken(user);
+
+                var profile = await _api.GetUserProfile(token.Username);
+
+                token.Profile = profile;
+
+                token = await _service.UpdateUser(token);
+
+                var credentials = new ConnectionCredentials(token.Username, token.AccessToken);
+                var client = new TwitchClient(loggerFactory: loggerFactory);
 
 
+
+                client.Initialize(credentials);
+
+                return client;
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
             }
 
-            var token = await _api.GetValidToken(user);
 
-            var profile = await _api.GetUserProfile(token.Username);
-
-            token.Profile = profile;
-
-            token = await _service.UpdateUser(token);
-   
-            var credentials = new ConnectionCredentials(token.Username,token.AccessToken );
-            var client = new TwitchClient(loggerFactory: loggerFactory);
-
-            
-
-            client.Initialize(credentials);
-
-            return client;
         }
     }
 }
