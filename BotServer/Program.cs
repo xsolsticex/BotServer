@@ -35,6 +35,7 @@ namespace BotServer
             builder.Services.AddScoped<UsersService>();
             builder.Services.AddSingleton<BotSignalRClient>();
             builder.Services.AddScoped<TokensService>();
+            builder.Services.AddScoped<ChannelsService>();
 
 
 
