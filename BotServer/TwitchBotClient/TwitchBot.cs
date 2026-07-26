@@ -76,12 +76,11 @@ namespace BotServer.TwitchBotClient
 
             if(ch.Count == 0)
             {
-                await _client.JoinChannelAsync(main);
+                ch.Add(main);
             }
-            else
-            {
-                await JoinToChannels(ch);
-            }
+
+            await JoinToChannels(ch);
+            
 
             
             
