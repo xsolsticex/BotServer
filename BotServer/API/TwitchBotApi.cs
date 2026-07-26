@@ -23,9 +23,6 @@ namespace BotServer.API
             _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID"); 
             _api.Settings.Secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
   
-            
-            
-
         }
 
 
