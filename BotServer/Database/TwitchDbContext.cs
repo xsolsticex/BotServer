@@ -28,7 +28,7 @@ namespace BotServer.Database
 
             modelBuilder.Entity<Users>().HasOne(u => u.Tokens).WithOne(t => t.User).HasForeignKey<UserTokens>(t => t.UsersId);
 
-            modelBuilder.Entity<JoinedChannels>().HasOne(u => u.ChannelName);
+            modelBuilder.Entity<JoinedChannels>().HasIndex(c => c.ChannelName).IsUnique();
         }
     }
 }
