@@ -137,7 +137,7 @@ namespace BotServer.TwitchBotClient
                     }
                     else
                     {
-                        await _client.SendReplyAsync(channel,e.ChatMessage.UserId.ToString(), "Ya estoy unido a tu canal");
+                        await _client.SendReplyAsync(channel,e.ChatMessage.Id.ToString(), "Ya estoy unido a tu canal");
                     }
 
 
