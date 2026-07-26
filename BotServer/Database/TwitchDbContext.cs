@@ -11,6 +11,8 @@ namespace BotServer.Database
 
         public DbSet<UserTokens> Tokens { get; set; }
 
+        public DbSet<JoinedChannels> JoinedChannels { get; set; }
+
         public TwitchDbContext(DbContextOptions options) : base(options)
         {
         }
@@ -25,6 +27,8 @@ namespace BotServer.Database
             modelBuilder.Entity<Users>().HasOne(u => u.Puntos).WithOne(p => p.User).HasForeignKey<Puntos>(p => p.UsersId);
 
             modelBuilder.Entity<Users>().HasOne(u => u.Tokens).WithOne(t => t.User).HasForeignKey<UserTokens>(t => t.UsersId);
+
+            modelBuilder.Entity<JoinedChannels>().HasOne(u => u.ChannelName);
         }
     }
 }

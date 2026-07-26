@@ -105,6 +105,12 @@ namespace BotServer.TwitchBotClient
                 case "join":
                     await _client.JoinChannelAsync(username);
 
+                    var service = _scope.CreateScope();
+
+                    var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
+
+                    await db.AddChannel(username);
+
                     var connection = new List<string> { "local", "remote" };
                     var con = connection[1];
                     var urlOBS = $"http://localhost:8000/chat/{username}";

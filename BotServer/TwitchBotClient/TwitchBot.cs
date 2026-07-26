@@ -1,5 +1,7 @@
-﻿using BotServer.TwitchBotClient.SignalRClient;
+﻿using BotServer.Database.Services;
+using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
+using TwitchLib.Communication.Interfaces;
 
 namespace BotServer.TwitchBotClient
 {
@@ -43,6 +45,14 @@ namespace BotServer.TwitchBotClient
             
         }
 
+        public async Task JoinToChannels(List<string> channels)
+        {
+            var tasks = channels.Select(channel => _client.JoinChannelAsync(channel));
+
+            await Task.WhenAll(tasks);
+
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _signalR.StartClient();
@@ -57,7 +67,24 @@ namespace BotServer.TwitchBotClient
             _events.Initialize(_client);
 
             await _client.ConnectAsync();
-            await _client.JoinChannelAsync(main);
+
+            var service = _scope.CreateScope();
+
+            var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
+
+            var ch = await db.GetChannels();
+
+            if(ch.Count == 0)
+            {
+                await _client.JoinChannelAsync(main);
+            }
+            else
+            {
+                await JoinToChannels(ch);
+            }
+
+            
+            
 
             try
             {
