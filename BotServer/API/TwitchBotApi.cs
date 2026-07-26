@@ -110,7 +110,7 @@ namespace BotServer.API
         public async Task<UserToken> RefreshToken(string refreshtoken)
         {
 
-            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, _api.Settings.ClientId, _api.Settings.Secret );
+            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken,  _api.Settings.Secret, _api.Settings.ClientId );
 
             return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
         }
