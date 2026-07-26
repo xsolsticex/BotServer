@@ -8,5 +8,7 @@ namespace BotServer.Database.Models
         public int Id { get; set; }
 
         public string ChannelName { get; set; }
+
+        public ICollection<ChannelMessages> Messages { get; set; }
     }
 }
