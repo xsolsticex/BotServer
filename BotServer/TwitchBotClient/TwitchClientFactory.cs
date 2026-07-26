@@ -5,6 +5,7 @@ using BotServer.TwitchBotClient.SignalRClient;
 using System.Diagnostics;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
+using TwitchLib.Communication.Interfaces;
 
 namespace BotServer.TwitchBotClient
 {
@@ -65,7 +66,7 @@ namespace BotServer.TwitchBotClient
                 Console.WriteLine(e);
             }
 
-
+            return null;
         }
     }
 }
