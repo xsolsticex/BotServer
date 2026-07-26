@@ -43,7 +43,7 @@ namespace BotServer
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
-                db.Database.EnsureCreated();
+                db.Database.Migrate();
             }
 
             app.UseStaticFiles();
