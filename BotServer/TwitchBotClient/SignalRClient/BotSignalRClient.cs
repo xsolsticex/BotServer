@@ -11,8 +11,8 @@ namespace BotServer.TwitchBotClient.SignalRClient
         public BotSignalRClient()
         {
 
-            connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
-            //connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
+            //connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
+            connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
 
             connection.On<string>("botMessage", (message) =>
             {
