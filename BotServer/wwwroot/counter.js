@@ -1,8 +1,6 @@
-import { createSocket } from "./socket.js";
-
 const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
 
-let socket;
+
 
 connection.on("win", () => {
     increaseValue(message);
@@ -105,8 +103,4 @@ function resetValue(data) {
     updateRate()
 
 }
-
-
-
-connect();
 
