@@ -104,3 +104,6 @@ function resetValue(data) {
 
 }
 
+
+
+Connect().catch(err => console.error(err));
