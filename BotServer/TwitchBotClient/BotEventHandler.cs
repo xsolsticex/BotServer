@@ -53,7 +53,7 @@ namespace BotServer.TwitchBotClient
             var color = e.ChatMessage.HexColor;
             var user = e.ChatMessage.Username;
 
-            if (message.StartsWith("!join")) return;
+            if (message.StartsWith("!join") || message.StartsWith("!win") || message.StartsWith("!lose") || message.StartsWith("!nowin") || message.StartsWith("!nolose") || message.StartsWith("!reset")) return;
             //Pendiende de añadir perfil de usuario
 
             var scope = _scope.CreateScope();
@@ -141,6 +141,17 @@ namespace BotServer.TwitchBotClient
                     }
 
 
+                    break;
+
+                case "win":
+                    await _signalR.UpdateCounter("win");
+                    break;
+
+                case "lose":
+                    await _signalR.UpdateCounter("lose");
+                    break;
+                case "reset":
+                    await _signalR.UpdateCounter("reset");
                     break;
             }
 

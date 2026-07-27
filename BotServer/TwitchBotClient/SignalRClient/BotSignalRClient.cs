@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using System.Diagnostics;
+using System.Numerics;
+using TwitchLib.Api.Helix.Models.Moderation.CheckAutoModStatus;
 
 namespace BotServer.TwitchBotClient.SignalRClient
 {
@@ -86,6 +88,27 @@ namespace BotServer.TwitchBotClient.SignalRClient
             {
                 Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
             }
+        }
+
+        public async Task UpdateCounter(string counter_state)
+        {
+            if (connection.State != HubConnectionState.Connected)
+            {
+                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
+                Console.WriteLine("Estado Actual: " + connection.State);
+                return;
+            }
+
+            try
+            {
+                await connection.SendAsync("UpdateCounter", counter_state);               
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+            }
+
         }
     }
 }

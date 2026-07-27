@@ -25,14 +25,7 @@ connection.onclose(error => {
 
 
 
-// connection.on("messageReceived", message => {
 
-//     var data = message.data;
-//     data = JSON.parse(data);
-//     if (data["type"] == "message") {
-//         createMessage(data);
-//     }
-// })
 
 //Conexion al socket SignalR
 async function Connect() {

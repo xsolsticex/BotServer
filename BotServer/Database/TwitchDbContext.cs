@@ -13,6 +13,8 @@ namespace BotServer.Database
 
         public DbSet<JoinedChannels> JoinedChannels { get; set; }
 
+        public DbSet<ChannelMessages> ChannelMessages { get; set; }
+
         public TwitchDbContext(DbContextOptions options) : base(options)
         {
         }

@@ -52,6 +52,9 @@ namespace BotServer
             
             app.MapGet("/chat/{username}", (string username) => { return Results.File("index.html", "text/html"); });
 
+            app.MapGet("/counter/{username}", (string username) => { return Results.File("counter.html", "text/html"); });
+
+
             app.Map("/connect", () =>
             {
                 

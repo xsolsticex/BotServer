@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using TwitchLib.Api.Helix.Models.Moderation.CheckAutoModStatus;
 
 namespace BotServer.Hubs
 {
@@ -22,6 +23,14 @@ namespace BotServer.Hubs
             Console.WriteLine("Mensaje recibido del bot");
             await Clients.Group(channel).SendAsync("botMessage", message);
             //await Clients.Group(channel).SendAsync("RespuestaServer", message);
+        }
+
+        public async Task UpdateCounter(string channel,string counter_state)
+        {
+            Console.WriteLine("Enviando mensaje al contador");
+            await Clients.Group(channel).SendAsync(counter_state);
+
+
         }
     }
 }
