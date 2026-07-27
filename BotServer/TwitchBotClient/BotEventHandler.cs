@@ -143,6 +143,14 @@ namespace BotServer.TwitchBotClient
 
                     break;
 
+                case "counter":
+                    await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"https://botserver-qccm.onrender.com/counter/{username.ToLower()}");
+                    break;
+
+                case "chat":
+                    await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"https://botserver-qccm.onrender.com/chat/{username.ToLower()}");
+                    break;
+
                 case "win":
                     await _signalR.UpdateCounter(channel,"win");
                     break;
