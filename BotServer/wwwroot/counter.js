@@ -4,24 +4,24 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAu
 
 
 connection.on("win", () => {
-    increaseValue(message);
+    increaseValue("win");
 });
 
 
 connection.on("lose", () => {
-    increaseValue(message);
+    increaseValue("lose");
 });
 
 connection.on("nowin", () => {
-    decreaseValue(message);
+    decreaseValue("nowin");
 });
 
 connection.on("nolose", () => {
-    decreaseValue(message);
+    decreaseValue("nolose");
 });
 
 connection.on("reset", () => {
-    resetValue(message);
+    resetValue("reset");
 });
 
 

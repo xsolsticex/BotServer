@@ -10,7 +10,9 @@ namespace BotServer.TwitchBotClient.SignalRClient
         HubConnection connection;
         public BotSignalRClient()
         {
-            connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
+
+            connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
+            //connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
 
             connection.On<string>("botMessage", (message) =>
             {
@@ -90,7 +92,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
             }
         }
 
-        public async Task UpdateCounter(string counter_state)
+        public async Task UpdateCounter(string channel,string counter_state)
         {
             if (connection.State != HubConnectionState.Connected)
             {
@@ -101,7 +103,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
 
             try
             {
-                await connection.SendAsync("UpdateCounter", counter_state);               
+                await connection.SendAsync("UpdateCounter",channel, counter_state);               
                 
             }
             catch (Exception ex)

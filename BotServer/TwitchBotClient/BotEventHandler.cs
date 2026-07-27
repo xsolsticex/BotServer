@@ -144,14 +144,14 @@ namespace BotServer.TwitchBotClient
                     break;
 
                 case "win":
-                    await _signalR.UpdateCounter("win");
+                    await _signalR.UpdateCounter(channel,"win");
                     break;
 
                 case "lose":
-                    await _signalR.UpdateCounter("lose");
+                    await _signalR.UpdateCounter(channel,"lose");
                     break;
                 case "reset":
-                    await _signalR.UpdateCounter("reset");
+                    await _signalR.UpdateCounter(channel,"reset");
                     break;
             }
 
