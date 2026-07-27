@@ -1,3 +1,4 @@
+const usuario = window.location.pathname.split("/").pop();
 const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
 
 
