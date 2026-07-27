@@ -92,6 +92,15 @@ function decreaseValue(data) {
 
 }
 
+async function Connect() {
+    await connection.start();
+    console.log("Conectado");
+    await connection.invoke("Join", usuario)
+    console.log("Join enviado");
+
+    //setTimeout(async () => { await connection.invoke("SendToClient", "carlos", "Hola nuevo usuario") }, 2000);
+}
+
 
 function resetValue(data) {
 
