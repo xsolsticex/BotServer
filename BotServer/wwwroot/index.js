@@ -70,21 +70,83 @@ function createMessage(data) {
     var content = data["content"];
     var color = data["color"];
     var profile = data["profile"];
+    var badges = data["badges"];
+
 
     var mensaje = document.createElement("div")
 
     mensaje.classList.add("mensaje");
+
+    if(badges.length == 1){
     mensaje.innerHTML = `
     <div class="sect-1">
-                <img
-                    src="${profile}">
-            </div>
-            <div class="sect-2">
-                <span style='color: ${color}'>${username}</span>
-                <div>
-                    ${content}
-                </div>
-            </div>`
+        <img src="${profile}">
+    </div>
+    <div class="sect-2">
+    <div class='subheader'>
+           <span class='badges'>
+              <img src='${badges[0]}'/>
+       </span>
+       <span style='color: ${color}'>${username}</span>
+    </subheader>
+
+       <div>
+          ${content}
+       </div>
+    </div>`
+    }else if(badges.length == 2){
+            mensaje.innerHTML = `
+    <div class="sect-1">
+        <img src="${profile}">
+    </div>
+    <div class="sect-2">
+    <div class='subheader'>
+           <span class='badges'>
+              <img src='${badges[0]}'/>
+              <img src='${badges[1]}'/>
+       </span>
+       <span style='color: ${color}'>${username}</span>
+    </subheader>
+
+       <div>
+          ${content}
+       </div>
+    </div>`
+    }else if(badges.length == 3){
+            mensaje.innerHTML = `
+    <div class="sect-1">
+        <img src="${profile}">
+    </div>
+    <div class="sect-2">
+    <div class='subheader'>
+           <span class='badges'>
+              <img src='${badges[0]}'/>
+              <img src='${badges[1]}'/>
+              <img src='${badges[2]}'/>
+       </span>
+       <span style='color: ${color}'>${username}</span>
+    </subheader>
+
+       <div>
+          ${content}
+       </div>
+    </div>`
+    }else{
+                    mensaje.innerHTML = `
+    <div class="sect-1">
+        <img src="${profile}">
+    </div>
+    <div class="sect-2">
+       <span style='color: ${color}'>${username}</span>
+    </subheader>
+
+       <div>
+          ${content}
+       </div>
+    </div>`
+    }
+    
+
 
     contenedor.appendChild(mensaje);
     // Eliminar tras 10 segundos

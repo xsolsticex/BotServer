@@ -12,6 +12,11 @@ body {
 font-family: "Decaydence";
 }
 
+.badges img{
+    width: 16px;
+    height: 16px;
+}
+
 .content {
     width: 20%;
     height: 100%;

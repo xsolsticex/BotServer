@@ -2,6 +2,7 @@
 using BotServer.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BotServer.Migrations
 {
     [DbContext(typeof(TwitchDbContext))]
-    partial class TwitchDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727130926_ChannelBadgesConstraintUpdated")]
+    partial class ChannelBadgesConstraintUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -42,10 +45,6 @@ namespace BotServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("BadgeId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -55,6 +54,9 @@ namespace BotServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("name")
+                        .IsUnique();
 
                     b.ToTable("GlobalBadges");
                 });

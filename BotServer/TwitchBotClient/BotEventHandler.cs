@@ -33,6 +33,7 @@ namespace BotServer.TwitchBotClient
         public async Task OnConnected(object? sender, OnConnectedEventArgs e)
         {
             Console.WriteLine("Connected");
+            await _api.GetChannelBadges();
         }
 
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
@@ -52,13 +53,18 @@ namespace BotServer.TwitchBotClient
             var channel = e.ChatMessage.Channel;
             var color = e.ChatMessage.HexColor;
             var user = e.ChatMessage.Username;
+            var badges =  e.ChatMessage.Badges.Select(b=> b.Key).ToList();
+
+
 
             if (message.StartsWith("!join") || message.StartsWith("!win") || message.StartsWith("!lose") || message.StartsWith("!nowin") || message.StartsWith("!counter") || message.StartsWith("!chat") || message.StartsWith("!nolose") || message.StartsWith("!reset")) return;
             //Pendiende de añadir perfil de usuario
-
+            
             var scope = _scope.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<UsersService>();
+            var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
 
+            var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
             var usu = await db.GetUser(user);
 
             var profile = usu.Profile;
@@ -68,11 +74,12 @@ namespace BotServer.TwitchBotClient
                 profile = await _api.GetUserProfile(user);
             }
 
-            var data = new Dictionary<string, string>();
+            var data = new Dictionary<string, object>();
             data.Add("username", user);
             data.Add("content", message);
             data.Add("color", color);
             data.Add("profile", profile);
+            data.Add("badges", badgesurl);
 
             try
             {
@@ -119,8 +126,8 @@ namespace BotServer.TwitchBotClient
 
                         await db.AddChannel(username);
 
-                        var connection = new List<string> { "local", "remote" };
-                        var con = connection[1];
+                        var cnd = new List<string> { "local", "remote" };
+                        var con = cnd[1];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
 

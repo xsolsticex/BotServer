@@ -2,6 +2,7 @@
 using BotServer.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BotServer.Migrations
 {
     [DbContext(typeof(TwitchDbContext))]
-    partial class TwitchDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727122716_ChannelBadgesTable")]
+    partial class ChannelBadgesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -34,29 +37,6 @@ namespace BotServer.Migrations
                     b.HasIndex("ChannelId");
 
                     b.ToTable("ChannelMessages");
-                });
-
-            modelBuilder.Entity("BotServer.Database.Models.GlobalBadges", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("BadgeId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("url")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("GlobalBadges");
                 });
 
             modelBuilder.Entity("BotServer.Database.Models.JoinedChannels", b =>

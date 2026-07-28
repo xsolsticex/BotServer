@@ -172,11 +172,32 @@ namespace BotServer.API
         }
 
 
+        public async Task GetChannelBadges()
+        {
+            var badges  = await _api.Helix.Chat.GetGlobalChatBadgesAsync();
+            var emoteSet = badges.EmoteSet;
+            List<GlobalBadges> globalBadges = new();
+
+            foreach (var item in emoteSet)
+            {
+               
+                globalBadges.Add(new GlobalBadges { BadgeId= item.Versions.First().Id, name=item.Versions.First().Title,url=item.Versions.First().ImageUrl1x });
+     
+            }
+
+            var scope = _service.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
+
+            await db.AddBadges(globalBadges);
+            
+
+        }
+
         public async Task GetAutorizationUrl(bool local = false)
         {
 
-            var connection = new List<string> { "local", "remote" };
-            var con = connection[1];
+            var cnd = new List<string> { "local", "remote" };
+            var con = cnd[1];
             if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";

@@ -1,0 +1,28 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace BotServer.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddNewContraintNew : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateIndex(
+                name: "IX_GlobalBadges_url",
+                table: "GlobalBadges",
+                column: "url",
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_GlobalBadges_url",
+                table: "GlobalBadges");
+        }
+    }
+}

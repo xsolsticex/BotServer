@@ -72,6 +72,10 @@ namespace BotServer.TwitchBotClient
 
             var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
 
+            var badges = service.ServiceProvider.GetRequiredService<GlobalBadgesService>();
+
+            await badges.DropData();
+
             var ch = await db.GetChannels();
 
             if(ch.Count == 0)

@@ -1,5 +1,6 @@
 using BotServer.API;
 using BotServer.Database;
+using BotServer.Database.Models;
 using BotServer.Database.Services;
 using BotServer.Hubs;
 using BotServer.TwitchBotClient;
@@ -17,8 +18,8 @@ namespace BotServer
         {
             var path = AppContext.BaseDirectory;
 
-            var connection = new List<string> { "local", "remote" };
-            var con = connection[1];
+            var cnd = new List<string> { "local", "remote" };
+            var con = cnd[1];
             var dbPath = string.Empty;
             if(con == "local")
             {
@@ -49,6 +50,7 @@ namespace BotServer
             builder.Services.AddSingleton<BotSignalRClient>();
             builder.Services.AddScoped<TokensService>();
             builder.Services.AddScoped<ChannelsService>();
+            builder.Services.AddScoped<GlobalBadgesService>();
 
 
 
@@ -60,6 +62,8 @@ namespace BotServer
                 db.Database.Migrate();
             }
 
+
+            
             app.UseStaticFiles();
             app.UseWebSockets();
             
@@ -71,9 +75,9 @@ namespace BotServer
             app.Map("/connect", () =>
             {
                 
-                var connection = new List<string> { "local", "remote" };
+                var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = connection[1];
+                var cnt = cnd[1];
                 
                 var redirect = "http://localhost:8000/confirm";
                 

@@ -18,11 +18,21 @@ namespace BotServer.Hubs
             await Clients.Group(channel).SendAsync("RespuestaServer", message);
         }
 
-        public async Task SendFromBot(string channel, Dictionary<string,string> message)
+        public async Task SendFromBot(string channel, Dictionary<string,object> message)
         {
-            Console.WriteLine("Mensaje recibido del bot");
-            await Clients.Group(channel).SendAsync("botMessage", message);
-            //await Clients.Group(channel).SendAsync("RespuestaServer", message);
+
+            try
+            {
+                Console.WriteLine("Mensaje recibido del bot");
+                await Clients.Group(channel).SendAsync("botMessage", message);
+                //await Clients.Group(channel).SendAsync("RespuestaServer", message);
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
         }
 
         public async Task UpdateCounter(string channel,string counter_state)

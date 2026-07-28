@@ -10,9 +10,20 @@ namespace BotServer.TwitchBotClient.SignalRClient
         HubConnection connection;
         public BotSignalRClient()
         {
+            var cnd = new List<string> { "local", "remote" };
+            var con = cnd[1];
+            if (con == "local")
+            {
+                connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
 
-            //connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
-            connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
+            }
+            else
+            {
+                connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
+            }
+
+
+
 
             connection.On<string>("botMessage", (message) =>
             {
@@ -70,7 +81,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
         }
 
 
-        public async Task Send(string channel, Dictionary<string, string> message)
+        public async Task Send(string channel, Dictionary<string, object> message)
         {
                         // 3. Validación de estado antes de enviar para evitar crashes
             if (connection.State != HubConnectionState.Connected)
