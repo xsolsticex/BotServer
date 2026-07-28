@@ -137,9 +137,10 @@ namespace BotServer.TwitchBotClient
                             urlAuth = $"https://botserver-qccm.onrender.com/connect";
                         }
 
-                        await _client.SendMessageAsync(channel, $"Añade a tu OBS la fuente como navegador: {urlOBS}");
+                        //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
-                        await _client.SendMessageAsync(channel, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+                        await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+                      
 
                     }
                     else

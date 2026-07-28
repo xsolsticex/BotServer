@@ -1,14 +1,11 @@
 using BotServer.API;
 using BotServer.Database;
-using BotServer.Database.Models;
 using BotServer.Database.Services;
 using BotServer.Hubs;
 using BotServer.TwitchBotClient;
 using BotServer.TwitchBotClient.SignalRClient;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
 using TwitchLib.Api;
-using TwitchLib.Client;
 
 namespace BotServer
 {
