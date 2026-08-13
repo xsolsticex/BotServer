@@ -1,6 +1,5 @@
 ﻿using BotServer.Database.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
 
 namespace BotServer.Database.Services
 {
@@ -8,7 +7,8 @@ namespace BotServer.Database.Services
     {
         private TwitchDbContext _context;
 
-        public GlobalBadgesService(TwitchDbContext context) {
+        public GlobalBadgesService(TwitchDbContext context)
+        {
 
             _context = context;
 
@@ -22,29 +22,50 @@ namespace BotServer.Database.Services
             if (count > 0)
             {
                 await _context.GlobalBadges.ExecuteDeleteAsync();
+                await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name = 'GlobalBadges';");
             }
         }
 
 
-        public async Task<List<string>> GetBadgesUrlbadges(List<string> badges)
+        /// <summary>
+        /// Gets Badges Url
+        /// </summary>
+        /// <param name="badges"></param>
+        /// <returns>Dictionary<string,string> GlobalBadgesUrl</returns>
+        public async Task<Dictionary<string, string>> GetBadgesUrlbadges(List<string> badges)
         {
 
-            var badgesLower = badges.Select(b => b.ToLower()).ToList();
 
-            return await _context.GlobalBadges
-                .Where(b => badgesLower.Contains(b.name.ToLower()))
-                .Select(b => b.url)
-                .ToListAsync();
+            var badgesLower = badges.Select(b => b.ToLower().Replace("®", "").Replace("™", "").Replace(":", "").Trim()).ToList();
+
+            var results = await _context.GlobalBadges
+    .Where(b => badgesLower.Contains(
+        b.name
+            .ToLower()
+            .Replace("®", "")
+            .Replace("™", "")
+            .Replace(":", "")
+            .Trim()))
+    .ToListAsync();
+
+            return results.ToDictionary(
+    b => b.name
+        .ToLower()
+        .Replace("®", "")
+        .Replace("™", "")
+        .Replace(":", "")
+        .Trim(),
+    b => b.url);
         }
         public async Task AddBadges(List<GlobalBadges> badges)
         {
 
             var existingNames = await _context.GlobalBadges
-       .Select(b => b.name)
+       .Select(b => b.url)
        .ToHashSetAsync();
 
             var newBadges = badges
-                .Where(b => !existingNames.Contains(b.name))
+                .Where(b => !existingNames.Contains(b.url))
                 .ToList();
 
             if (newBadges.Count > 0)

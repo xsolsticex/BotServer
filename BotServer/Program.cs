@@ -48,6 +48,8 @@ namespace BotServer
             builder.Services.AddScoped<TokensService>();
             builder.Services.AddScoped<ChannelsService>();
             builder.Services.AddScoped<GlobalBadgesService>();
+            builder.Services.AddScoped<CustomBadgesServices>();
+            builder.Services.AddScoped<JoinedChannelsServices>();
 
 
 

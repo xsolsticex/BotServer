@@ -21,7 +21,7 @@ namespace BotServer.Database.Services
             if(user!= null && user.Tokens != null)
             {
 
-                return new UserToken { AccessToken = user.Tokens.AccessToken, RefreshToken = user.Tokens.RefreshToken };
+                return new UserToken { AccessToken = user.Tokens.AccessToken, RefreshToken = user.Tokens.RefreshToken,Username = name,Profile = user.Profile};
             }
             return null;
           

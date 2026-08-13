@@ -1,10 +1,8 @@
 ﻿using BotServer.API;
-using BotServer.Database.Models;
 using BotServer.Database.Services;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BotServer.TwitchBotClient
 {
@@ -34,17 +32,29 @@ namespace BotServer.TwitchBotClient
         {
             Console.WriteLine("Connected");
             await _api.GetChannelBadges();
+
         }
 
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
         {
-            var channel = e.Channel;
+            try
+            {
+                var channel = e.Channel;
 
+                var user = await _api.GetUserData(channel);
 
+                await _api.GetCustomBadges(user.TwitchId, channel);
 
-            await _client.SendMessageAsync(channel, "Connected to chat");
+                //await _client.SendMessageAsync(channel, "Connected to chat");
 
-            Console.WriteLine($"Joined to {channel} channel");
+                Console.WriteLine($"Joined to {channel} channel");
+            }
+            catch (Exception a)
+            {
+
+                Console.WriteLine(a);
+            }
+
         }
 
         public async Task onMessageReceived(object? sender, OnMessageReceivedArgs e)
@@ -52,37 +62,100 @@ namespace BotServer.TwitchBotClient
             var message = e.ChatMessage.Message;
             var channel = e.ChatMessage.Channel;
             var color = e.ChatMessage.HexColor;
-            var user = e.ChatMessage.Username;
-            var badges =  e.ChatMessage.Badges.Select(b=> b.Key).ToList();
 
-
-
-            if (message.StartsWith("!join") || message.StartsWith("!win") || message.StartsWith("!lose") || message.StartsWith("!nowin") || message.StartsWith("!counter") || message.StartsWith("!chat") || message.StartsWith("!nolose") || message.StartsWith("!reset")) return;
-            //Pendiende de añadir perfil de usuario
-            
-            var scope = _scope.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<UsersService>();
-            var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
-
-            var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
-            var usu = await db.GetUser(user);
-
-            var profile = usu.Profile;
-
-            if (profile == null)
+            if (string.IsNullOrEmpty(color))
             {
-                profile = await _api.GetUserProfile(user);
+                color = "#ffc107";
             }
+            var user = e.ChatMessage.Username;
+            var badges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
 
-            var data = new Dictionary<string, object>();
-            data.Add("username", user);
-            data.Add("content", message);
-            data.Add("color", color);
-            data.Add("profile", profile);
-            data.Add("badges", badgesurl);
+            badges = badges.Select(element =>
+            {
+
+                if (element == "bot-badge")
+                {
+                    element = "Chat Bot";
+                }else if(element == "premium")
+                {
+                    element = "Prime Gaming";
+                }
+
+                if (element.Contains("-") || element.Contains("_"))
+                {
+                    string name = string.Empty;
+
+                    var newName = element.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+
+
+                    return string.Join(" ", newName.Select(w => char.ToUpper(w[0]) + w.Substring(1)));
+
+                }
+                else
+                {
+                    return element;
+                }
+            }).ToList();
+            //badges.Add("subscriber");
+            //badges.Add("Final Fantasy Xiv Fan Festival 2026 Eu Content Unlock Quest Chat");
+            //badges.Add("Lego Batman Legacy Of The Dark Knight");
 
             try
             {
+                if (message.StartsWith("!")) return;
+                //if (message.StartsWith("!join") || message.StartsWith("!win") || message.StartsWith("!lose") || message.StartsWith("!nowin") || message.StartsWith("!counter") || message.StartsWith("!chat") || message.StartsWith("!nolose") || message.StartsWith("!reset")) return;
+                //Pendiende de añadir perfil de usuario
+
+                var scope = _scope.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<UsersService>();
+                var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
+                var custombadgeDb = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
+
+
+                //Obtener las customs
+                var customBadges = await custombadgeDb.GetUrlCustomBadges(badges, channel);
+
+
+                //Obtiene las globales
+                 var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
+
+      
+                if (customBadges != null)
+                {
+                    foreach (var (setId, url) in customBadges)
+                    {
+                        badgesurl[setId.ToLower()] = url;
+                    }
+
+                }
+
+
+                List<string> res = new();
+                foreach (var setId in badges)
+                {
+               
+                    res.Add(badgesurl[setId.ToLower()]);
+                }
+
+                var usu = await db.GetUser(user);
+                string profile = string.Empty;
+                if (usu == null)
+                {
+                    profile = await _api.GetUserProfile(user);
+                }
+                else
+                {
+                    profile = usu.Profile;
+                }
+
+                var data = new Dictionary<string, object>();
+                data.Add("username", user);
+                data.Add("content", message);
+                data.Add("color", color);
+                data.Add("profile", profile);
+                data.Add("badges", res);
+
+
                 await _signalR.Send(channel, data);
             }
             catch (Exception c)
@@ -101,12 +174,13 @@ namespace BotServer.TwitchBotClient
             var command = e.Command.Name;
             var channel = e.ChatMessage.Channel;
             var username = e.ChatMessage.Username;
+            var user = e.ChatMessage.UserId;
 
             switch (command)
             {
                 case "hora":
                     TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
-                    var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow,zona);
+                    var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
                     await _client.SendMessageAsync(channel, time.ToString());
                     break;
 
@@ -118,12 +192,10 @@ namespace BotServer.TwitchBotClient
 
                     var exists = await db.FindChannel(username);
 
-                    if(exists == null)
+                    if (exists == null)
                     {
+                        await _api.GetCustomBadges(username, channel);
                         await _client.JoinChannelAsync(username);
-
-
-
                         await db.AddChannel(username);
 
                         var cnd = new List<string> { "local", "remote" };
@@ -140,12 +212,12 @@ namespace BotServer.TwitchBotClient
                         //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
                         await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Para dar permisos usa el siguiente enlace: {urlAuth}");
-                      
+
 
                     }
                     else
                     {
-                        await _client.SendReplyAsync(channel,e.ChatMessage.Id.ToString(), "Ya estoy unido a tu canal");
+                        await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), "Ya estoy unido a tu canal");
                     }
 
 
@@ -160,14 +232,14 @@ namespace BotServer.TwitchBotClient
                     break;
 
                 case "win":
-                    await _signalR.UpdateCounter(channel,"win");
+                    await _signalR.UpdateCounter(channel, "win");
                     break;
 
                 case "lose":
-                    await _signalR.UpdateCounter(channel,"lose");
+                    await _signalR.UpdateCounter(channel, "lose");
                     break;
                 case "reset":
-                    await _signalR.UpdateCounter(channel,"reset");
+                    await _signalR.UpdateCounter(channel, "reset");
                     break;
             }
 

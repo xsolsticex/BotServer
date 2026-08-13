@@ -10,5 +10,7 @@ namespace BotServer.Database.Models
         public string ChannelName { get; set; }
 
         public ICollection<ChannelMessages> Messages { get; set; }
+
+        public ICollection<CustomBadges> Badges { get; set; } = new List<CustomBadges>();
     }
 }

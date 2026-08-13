@@ -17,6 +17,9 @@ namespace BotServer.Database
 
         public DbSet<GlobalBadges> GlobalBadges { get; set; }
 
+        public DbSet<CustomBadges> CustomBadges { get; set; }
+
+
         public TwitchDbContext(DbContextOptions options) : base(options)
         {
         }
@@ -38,6 +41,9 @@ namespace BotServer.Database
     .HasMany(c => c.Messages)
     .WithOne(m => m.Channel)
     .HasForeignKey(m => m.ChannelId);
+
+
+            modelBuilder.Entity<CustomBadges>().HasIndex(c => c.BadgeUrl).IsUnique();
 
             //Revisar esta contraint
 

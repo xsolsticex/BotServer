@@ -64,6 +64,7 @@ namespace BotServer.TwitchBotClient
             _client = await fac.Create(main,false);
       
             RegisterEvents();
+
             _events.Initialize(_client);
 
             await _client.ConnectAsync();

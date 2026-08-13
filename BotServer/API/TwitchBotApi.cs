@@ -1,4 +1,5 @@
 ﻿using BotServer.API.Models;
+using BotServer.Database.DTO;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
 using System.Diagnostics;
@@ -180,8 +181,21 @@ namespace BotServer.API
 
             foreach (var item in emoteSet)
             {
-               
-                globalBadges.Add(new GlobalBadges { BadgeId= item.Versions.First().Id, name=item.Versions.First().Title,url=item.Versions.First().ImageUrl1x });
+                var name = item.Versions.First().Title;
+                if (name.Contains('_') || name.Contains('-'))
+                {
+                    var name_splited = name.Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+                    name = string.Join(" ", name_splited);
+                }
+
+                if(name.Contains("   "))
+                {
+                    name = name.Replace("   "," ");
+                }
+        
+
+
+                globalBadges.Add(new GlobalBadges { BadgeId= item.Versions.First().Id, name=name,url=item.Versions.First().ImageUrl1x });
      
             }
 
@@ -190,6 +204,36 @@ namespace BotServer.API
 
             await db.AddBadges(globalBadges);
             
+
+        }
+
+        public async Task GetCustomBadges(string broadcaster_id,string channel)
+        {
+            //Get Services
+            var scope = _service.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
+            var channelsDb = scope.ServiceProvider.GetRequiredService<JoinedChannelsServices>();
+
+            //Get channel info
+            var channelid = await channelsDb.GetChannelId(channel);
+            var badges = await _api.Helix.Chat.GetChannelChatBadgesAsync(broadcaster_id=broadcaster_id);
+            var emoteSet = badges.EmoteSet;
+
+
+            List<CustomBadge> globalBadges = new();
+
+            if (emoteSet.Length == 0) return;
+
+            foreach (var item in emoteSet)
+            {
+
+                globalBadges.Add(new CustomBadge { SetId = item.Versions.First().Title, Channel = channel, BadgeUrl = item.Versions.First().ImageUrl1x });
+
+            }
+
+     
+            await db.AddAllBadges(globalBadges);
+
 
         }
 
