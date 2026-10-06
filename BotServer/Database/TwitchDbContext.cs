@@ -19,6 +19,8 @@ namespace BotServer.Database
 
         public DbSet<CustomBadges> CustomBadges { get; set; }
 
+        public DbSet<SpotifyDB> SpotifyUsers { get; set; }
+
 
         public TwitchDbContext(DbContextOptions options) : base(options)
         {
@@ -36,6 +38,8 @@ namespace BotServer.Database
             modelBuilder.Entity<Users>().HasOne(u => u.Tokens).WithOne(t => t.User).HasForeignKey<UserTokens>(t => t.UsersId);
 
             modelBuilder.Entity<JoinedChannels>().HasIndex(c => c.ChannelName).IsUnique();
+
+            modelBuilder.Entity<SpotifyDB>().HasIndex(c => c.Username).IsUnique();
 
             modelBuilder.Entity<JoinedChannels>()
     .HasMany(c => c.Messages)

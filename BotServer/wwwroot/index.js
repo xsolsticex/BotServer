@@ -114,7 +114,7 @@ function createMessage(data) {
     </div>
     </div>`
     } else if (badges.length == 3) {
-          mensaje.innerHTML = `
+        mensaje.innerHTML = `
     <div class="sect-1">
         <img src="${profile}">
     </div>
@@ -133,7 +133,7 @@ function createMessage(data) {
         ${content}
     </div>
     </div>`
-    } else {
+    } else if (badges.length == 4) {
         mensaje.innerHTML = `
     <div class="sect-1">
         <img src="${profile}">
@@ -147,6 +147,21 @@ function createMessage(data) {
                 <img src='${badges[2]}'/>
                 <img src='${badges[3]}'/>
             </span>
+            <span style='color: ${color}'>${username}</span>
+        </div>
+    </div>
+    <div>
+        ${content}
+    </div>
+    </div>`
+    } else {
+        mensaje.innerHTML = `
+    <div class="sect-1">
+        <img src="${profile}">
+    </div>
+    <div class="sect-2">
+    <div class='subheader'>
+        <div class='top'>
             <span style='color: ${color}'>${username}</span>
         </div>
     </div>

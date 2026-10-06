@@ -1,0 +1,50 @@
+@font-face {
+    font-family: "StarWars";
+    src: url("./SF\ Distant\ Galaxy.ttf");
+}
+
+body{
+    font-family: "StarWars";
+}
+
+img {
+
+    width: 50px;
+}
+
+.counters {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-items: center;
+}
+
+.subs,
+.follows {
+    display: flex;
+    gap: 20px;
+    border: 1px solid black;
+    border-radius: 20px;
+    padding: 10px;
+    min-width: 217px;
+    margin-bottom: 10px;
+    background: linear-gradient(red 0%,black 10%,black 90%,red 100%);
+}
+
+
+.sub-content,
+.follow-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.sub-content > .subs-title,.sub-content > .subs-counter{
+color: rgb(129, 37, 25);
+}
+
+.follow-content > .follow-title,.follow-content > .follow-counter{
+color: rgb(76, 129, 189);
+}

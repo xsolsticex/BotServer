@@ -43,6 +43,10 @@ namespace BotServer.TwitchBotClient
 
                 var user = await _api.GetUserData(channel);
 
+                await _api.GetFollowers(user);
+
+                await _api.GetSubs(user);
+
                 await _api.GetCustomBadges(user.TwitchId, channel);
 
                 //await _client.SendMessageAsync(channel, "Connected to chat");
@@ -175,33 +179,37 @@ namespace BotServer.TwitchBotClient
             var channel = e.ChatMessage.Channel;
             var username = e.ChatMessage.Username;
             var user = e.ChatMessage.UserId;
+            var messageID = e.ChatMessage.Id.ToString();
 
             switch (command)
             {
                 case "hora":
                     TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
                     var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
-                    await _client.SendMessageAsync(channel, time.ToString());
+                    var timeToString = time.ToString();
+                    await _client.SendMessageAsync(channel, timeToString);
                     break;
 
-                case "join":
+                 case "join":
 
                     var service = _scope.CreateScope();
-
                     var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
-
                     var exists = await db.FindChannel(username);
-
+                
                     if (exists == null)
                     {
-                        await _api.GetCustomBadges(username, channel);
-                        await _client.JoinChannelAsync(username);
-                        await db.AddChannel(username);
 
                         var cnd = new List<string> { "local", "remote" };
                         var con = cnd[1];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
+                      
+
+
+                        await _api.GetCustomBadges(username, channel);
+                        await _client.JoinChannelAsync(username);
+ 
+                        await db.AddChannel(username);
 
                         if (con == "remote")
                         {
@@ -211,24 +219,23 @@ namespace BotServer.TwitchBotClient
 
                         //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
-                        await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+                        await _client.SendReplyAsync(channel, messageID, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
 
 
                     }
                     else
                     {
-                        await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), "Ya estoy unido a tu canal");
+                        await _client.SendReplyAsync(channel, messageID, "Ya estoy unido a tu canal");
                     }
-
 
                     break;
 
                 case "counter":
-                    await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"https://botserver-qccm.onrender.com/counter/{username.ToLower()}");
+                    await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/counter/{username.ToLower()}");
                     break;
 
                 case "chat":
-                    await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"https://botserver-qccm.onrender.com/chat/{username.ToLower()}");
+                    await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/chat/{username.ToLower()}");
                     break;
 
                 case "win":
@@ -238,6 +245,7 @@ namespace BotServer.TwitchBotClient
                 case "lose":
                     await _signalR.UpdateCounter(channel, "lose");
                     break;
+
                 case "reset":
                     await _signalR.UpdateCounter(channel, "reset");
                     break;
@@ -249,29 +257,18 @@ namespace BotServer.TwitchBotClient
         internal async Task onUserJoined(object? sender, OnUserJoinedArgs e)
         {
             var scope = _scope.CreateScope();
-
             var db = scope.ServiceProvider.GetRequiredService<UsersService>();
-
-
             var usu = e.Username;
-
             var exists = await db.GetUser(usu);
 
             if (exists == null)
             {
                 var user = await _api.GetUserData(usu);
-
                 var profile = await _api.GetUserProfile(usu);
-
 
                 await db.CreateUser(user);
 
             }
-
-
-
-
-
 
         }
     }

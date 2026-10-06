@@ -1,4 +1,5 @@
 ﻿using BotServer.Database.Services;
+using BotServer.SpotifyClientApi;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
 using TwitchLib.Communication.Interfaces;
@@ -13,13 +14,15 @@ namespace BotServer.TwitchBotClient
         private BotEventHandler _events;
         private IServiceScopeFactory _scope;
         private BotSignalRClient _signalR;
+        private SpotyClient _spoty;
 
-        public TwitchBot(BotEventHandler events,IServiceScopeFactory scope, BotSignalRClient signalR)
+        public TwitchBot(BotEventHandler events,IServiceScopeFactory scope, BotSignalRClient signalR,SpotyClient spoty)
         {
             
             _events = events;
             _scope = scope;
             _signalR = signalR;
+            _spoty = spoty;
         }
 
         public async Task Stop()
@@ -55,6 +58,8 @@ namespace BotServer.TwitchBotClient
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+
+            //await _spoty.GetSong();
             await _signalR.StartClient();
             var main = Environment.GetEnvironmentVariable("MAIN_CHANNEL");
             using var fscope = _scope.CreateScope();

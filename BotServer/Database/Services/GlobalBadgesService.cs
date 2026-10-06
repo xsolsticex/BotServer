@@ -39,24 +39,30 @@ namespace BotServer.Database.Services
             var badgesLower = badges.Select(b => b.ToLower().Replace("®", "").Replace("™", "").Replace(":", "").Trim()).ToList();
 
             var results = await _context.GlobalBadges
-    .Where(b => badgesLower.Contains(
-        b.name
-            .ToLower()
-            .Replace("®", "")
-            .Replace("™", "")
-            .Replace(":", "")
-            .Trim()))
-    .ToListAsync();
+                .Where(b => badgesLower.Any(input =>
+                    b.name
+                        .ToLower()
+                        .Replace("'", "")
+                        .Replace("’", "")
+                        .Replace("®", "")
+                        .Replace("™", "")
+                        .Replace(":", "")
+                        .Trim()
+                        .StartsWith(input)))
+                .ToListAsync();
 
             return results.ToDictionary(
     b => b.name
         .ToLower()
+        .Replace("'", "")
+        .Replace("’", "")
         .Replace("®", "")
         .Replace("™", "")
         .Replace(":", "")
         .Trim(),
     b => b.url);
         }
+
         public async Task AddBadges(List<GlobalBadges> badges)
         {
 

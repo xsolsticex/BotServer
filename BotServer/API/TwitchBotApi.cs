@@ -27,7 +27,7 @@ namespace BotServer.API
         }
 
 
-        public async Task<UserToken> GetTokenWithCode(string code)
+        public async Task<UserToken?> GetTokenWithCode(string code)
         {
             AuthCodeResponse token = await _api.Auth.GetAccessTokenFromCodeAsync(code, clientId: _api.Settings.ClientId, clientSecret: _api.Settings.Secret, redirectUri: "https://botserver-qccm.onrender.com/confirm");
             if (token is not null)
@@ -41,7 +41,7 @@ namespace BotServer.API
 
         }
 
-        public async Task<ValidateAccessTokenResponse> ValidateToken(string token)
+        public async Task<ValidateAccessTokenResponse?> ValidateToken(string token)
         {
             var isValid = await _api.Auth.ValidateAccessTokenAsync(accessToken: token);
             
@@ -52,6 +52,22 @@ namespace BotServer.API
             return null;
 
             
+        }
+
+        public async Task GetFollowers(Users user)
+        {
+            var token = await GetValidToken(user.Username);
+            var followers = await _api.Helix.Channels.GetChannelFollowersAsync(user.TwitchId);
+            Console.WriteLine("");
+
+        }
+
+        public async Task GetSubs(Users user)
+        {
+            var token = await GetValidToken(user.Username);
+            var followers = await _api.Helix.Subscriptions.GetBroadcasterSubscriptionsAsync(user.TwitchId);
+            Console.WriteLine("");
+
         }
 
 
@@ -85,7 +101,8 @@ namespace BotServer.API
             {
 
                 var token = await GetValidToken("xhipibotx");
-                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
+                
+                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username },accessToken:  token.AccessToken);
 
                 if (user is not null)
                 {
@@ -157,12 +174,17 @@ namespace BotServer.API
             
             if (isValid == null)
             {
+                //refreshed token
+                var refreshedToken = await RefreshToken(token.RefreshToken);
 
-                token = await RefreshToken(token.RefreshToken);
+                token.AccessToken = refreshedToken.AccessToken;
+                token.RefreshToken = refreshedToken.RefreshToken;
+
+                await tokenService.SaveData();
+
                 isValid = await ValidateToken(token.AccessToken);
-
+                        
             }
-
 
             _api.Settings.AccessToken = token.AccessToken;
 
@@ -193,8 +215,6 @@ namespace BotServer.API
                     name = name.Replace("   "," ");
                 }
         
-
-
                 globalBadges.Add(new GlobalBadges { BadgeId= item.Versions.First().Id, name=name,url=item.Versions.First().ImageUrl1x });
      
             }
@@ -209,6 +229,8 @@ namespace BotServer.API
 
         public async Task GetCustomBadges(string broadcaster_id,string channel)
         {
+            List<CustomBadge> globalBadges = new();
+
             //Get Services
             var scope = _service.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
@@ -220,15 +242,11 @@ namespace BotServer.API
             var emoteSet = badges.EmoteSet;
 
 
-            List<CustomBadge> globalBadges = new();
-
             if (emoteSet.Length == 0) return;
 
             foreach (var item in emoteSet)
             {
-
                 globalBadges.Add(new CustomBadge { SetId = item.Versions.First().Title, Channel = channel, BadgeUrl = item.Versions.First().ImageUrl1x });
-
             }
 
      
