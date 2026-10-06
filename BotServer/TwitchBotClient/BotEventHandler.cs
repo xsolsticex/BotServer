@@ -203,19 +203,27 @@ namespace BotServer.TwitchBotClient
                         var con = cnd[1];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
-                      
 
 
-                        await _api.GetCustomBadges(username, channel);
-                        await _client.JoinChannelAsync(username);
- 
-                        await db.AddChannel(username);
-
-                        if (con == "remote")
+                        try
                         {
-                            urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
-                            urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                            await _api.GetCustomBadges(user, channel);
+                            await _client.JoinChannelAsync(username);
+
+                            await db.AddChannel(username);
+
+                            if (con == "remote")
+                            {
+                                urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
+                                urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                            }
                         }
+                        catch (Exception a)
+                        {
+
+                            Console.WriteLine(a);
+                        }
+ 
 
                         //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
