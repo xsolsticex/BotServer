@@ -242,6 +242,10 @@ namespace BotServer.TwitchBotClient
                     await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/counter/{username.ToLower()}");
                     break;
 
+                case "status":
+                    await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/status/{username.ToLower()}");
+                    break;
+
                 case "chat":
                     await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/chat/{username.ToLower()}");
                     break;

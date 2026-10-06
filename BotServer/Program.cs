@@ -101,7 +101,7 @@ namespace BotServer
 
             });
 
-            app.MapGet("/followers/{username}", (string username) => { return Results.File("followers.html", "text/html"); });
+            app.MapGet("/status/{username}", (string username) => { return Results.File("followers.html", "text/html"); });
 
             app.MapGet("/chat/{username}", (string username) => { return Results.File("index.html", "text/html"); });
 
