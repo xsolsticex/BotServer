@@ -13,13 +13,26 @@ namespace BotServer.Database.Services
         }
 
 
-        public async Task AddChannel(string name)
+        public async Task AddChannel(string name,int followers = 0,int subs=0)
         {
             var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name.ToLower()).FirstOrDefault();
 
             if (channel == null) {
 
-                await _context.JoinedChannels.AddAsync(new JoinedChannels {ChannelName = name });
+                await _context.JoinedChannels.AddAsync(new JoinedChannels {ChannelName = name,Followers=followers,Subs=subs });
+                await _context.SaveChangesAsync();
+            }
+
+        }
+
+        public async Task UpdateChannel(string name, int followers = 0, int subs = 0)
+        {
+            var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name.ToLower()).FirstOrDefault();
+
+            if (channel != null)
+            {
+                channel.Followers = followers;
+                channel.Subs = subs;
                 await _context.SaveChangesAsync();
             }
 

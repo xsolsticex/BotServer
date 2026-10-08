@@ -20,7 +20,7 @@ namespace BotServer
             var path = AppContext.BaseDirectory;
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             var dbPath = string.Empty;
             if (con == "local")
             {
@@ -108,12 +108,19 @@ namespace BotServer
             app.MapGet("/counter/{username}", (string username) => { return Results.File("counter.html", "text/html"); });
 
 
+            app.MapGet("/data/{username}", async (string username, [FromKeyedServices] ChannelsService channelDb) => {
+
+                var ch = await channelDb.FindChannel(username);
+                return new Dictionary<string, int>() { {"followers",ch.Followers }, {"subs",ch.Subs } };
+            
+            });
+
             app.Map("/connect", () =>
             {
 
                 var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = cnd[1];
+                var cnt = cnd[0];
 
                 var redirect = "http://localhost:8000/confirm";
 
@@ -128,7 +135,7 @@ namespace BotServer
 
             });
 
-            app.MapGet("/confirm", async (HttpContext context, [FromKeyedServices] TwitchBotApi api, [FromKeyedServices] UsersService userService) =>
+            app.MapGet("/confirm", async (HttpContext context, [FromKeyedServices] TwitchBotApi api, [FromKeyedServices] UsersService userService, [FromKeyedServices] ChannelsService channelService) =>
             {
 
                 var code = context.Request.Query["code"];
@@ -141,6 +148,12 @@ namespace BotServer
 
 
                 await userService.CreateUser(token);
+
+                var followers = await api.GetFollowers(token.Username,token.UserId);
+
+                var subs = await api.GetSubs(token.Username, token.UserId);
+
+                await channelService.UpdateChannel(token.Username, followers, subs);
 
                 try
                 {
@@ -158,13 +171,6 @@ namespace BotServer
 
                     Console.WriteLine(a);
                 }
-
-
-
-
-
-
-
 
             });
 

@@ -39,17 +39,12 @@ namespace BotServer.TwitchBotClient
         {
             try
             {
+                var service = _scope.CreateScope();
+                var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                 var channel = e.Channel;
-
                 var user = await _api.GetUserData(channel);
 
-                await _api.GetFollowers(user);
-
-                await _api.GetSubs(user);
-
                 await _api.GetCustomBadges(user.TwitchId, channel);
-
-                //await _client.SendMessageAsync(channel, "Connected to chat");
 
                 Console.WriteLine($"Joined to {channel} channel");
             }
@@ -66,13 +61,14 @@ namespace BotServer.TwitchBotClient
             var message = e.ChatMessage.Message;
             var channel = e.ChatMessage.Channel;
             var color = e.ChatMessage.HexColor;
+            var user = e.ChatMessage.Username;
+            var badges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
 
             if (string.IsNullOrEmpty(color))
             {
                 color = "#ffc107";
             }
-            var user = e.ChatMessage.Username;
-            var badges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
+
 
             badges = badges.Select(element =>
             {
@@ -192,6 +188,7 @@ namespace BotServer.TwitchBotClient
 
                  case "join":
 
+                    
                     var service = _scope.CreateScope();
                     var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                     var exists = await db.FindChannel(username);
@@ -200,7 +197,7 @@ namespace BotServer.TwitchBotClient
                     {
 
                         var cnd = new List<string> { "local", "remote" };
-                        var con = cnd[1];
+                        var con = cnd[0];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
 
@@ -208,9 +205,10 @@ namespace BotServer.TwitchBotClient
                         try
                         {
                             await _api.GetCustomBadges(user, channel);
-                            await _client.JoinChannelAsync(username);
 
+                            await _client.JoinChannelAsync(username);
                             await db.AddChannel(username);
+              
 
                             if (con == "remote")
                             {
@@ -254,6 +252,14 @@ namespace BotServer.TwitchBotClient
                     await _signalR.UpdateCounter(channel, "win");
                     break;
 
+                case "help":
+                    await _client.SendReplyAsync(channel, messageID, $"Comandos: Test: !hora, Unir a canal: !join, Url contador: !counter, Url estado: !status, Url chat: !chat, Comandos contador: !win, !lose, !reset");
+                    break;
+
+                //case "sub":
+                //    await _signalR.UpdateFollowers(channel, new Dictionary<string, int> { {"followers",50 },{"subs",20 } });
+                //    break;
+
                 case "lose":
                     await _signalR.UpdateCounter(channel, "lose");
                     break;
@@ -282,6 +288,37 @@ namespace BotServer.TwitchBotClient
 
             }
 
+        }
+
+        internal async Task SubsHandler(object? sender, EventArgs e)
+        {
+            
+        }
+
+        internal async Task newSub(object? sender, OnNewSubscriberArgs e)
+        {
+
+            var scope = _scope.CreateScope();
+            var usersDb = scope.ServiceProvider.GetRequiredService<UsersService>();
+            var db = scope.ServiceProvider.GetRequiredService<ChannelsService>();
+
+
+            var channel = e.Channel;
+
+            var user = await usersDb.GetUser(channel);
+            var channelData = await db.FindChannel(channel);
+
+            if(channelData != null && user != null)
+            {
+                var followers = await _api.GetFollowers(user.Username, user.UserId);
+                var subs = await _api.GetFollowers(user.Username, user.UserId);
+
+                await db.UpdateChannel(channel, followers, subs);
+                await _signalR.UpdateFollowers(channel, new Dictionary<string, int> { { "followers", followers }, { "subs", subs } });
+               
+            }
+    
+            
         }
     }
 }

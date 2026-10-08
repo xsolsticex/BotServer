@@ -7,6 +7,7 @@ using System.Security.AccessControl;
 using TwitchLib.Api;
 using TwitchLib.Api.Auth;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BotServer.API
 {
@@ -54,19 +55,48 @@ namespace BotServer.API
             
         }
 
-        public async Task GetFollowers(Users user)
+        public async Task<int> GetFollowers(string username,string userid)
         {
-            var token = await GetValidToken(user.Username);
-            var followers = await _api.Helix.Channels.GetChannelFollowersAsync(user.TwitchId);
-            Console.WriteLine("");
+
+            try
+            {
+                var token = await GetValidToken(username);
+                var followers = await _api.Helix.Channels.GetChannelFollowersAsync(userid);
+                return followers.Total;
+            }
+            catch (Exception a)
+            {
+
+                Console.WriteLine(a);
+                return 0;
+            }
+
+
 
         }
 
-        public async Task GetSubs(Users user)
+        public async Task<int> GetFollowers(Users user)
         {
             var token = await GetValidToken(user.Username);
-            var followers = await _api.Helix.Subscriptions.GetBroadcasterSubscriptionsAsync(user.TwitchId);
-            Console.WriteLine("");
+            var followers = await _api.Helix.Channels.GetChannelFollowersAsync(user.TwitchId);
+            return followers.Total;
+
+
+        }
+
+        public async Task<int> GetSubs(string username, string userid)
+        {
+            var token = await GetValidToken(username);
+            var subs = await _api.Helix.Subscriptions.GetBroadcasterSubscriptionsAsync(userid);
+            return subs.Total;
+
+        }
+
+        public async Task<int> GetSubs(Users user)
+        {
+            var token = await GetValidToken(user.Username);
+            var subs = await _api.Helix.Subscriptions.GetBroadcasterSubscriptionsAsync(user.TwitchId);
+            return subs.Total;
 
         }
 
@@ -259,7 +289,7 @@ namespace BotServer.API
         {
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";

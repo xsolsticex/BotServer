@@ -29,10 +29,29 @@ connection.onclose(error => {
 
 //Conexion al socket SignalR
 async function Connect() {
-    await connection.start();
-    console.log("Conectado");
-    await connection.invoke("Join", usuario)
-    console.log("Join enviado");
+    while (connection.state === signalR.HubConnectionState.Disconnected) {
+        try {
+            await connection.start();
+            console.log("Conectado");
+            break;
+        } catch (error) {
+            console.error("Error:", error);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+    }
+
+    if (connection.state === signalR.HubConnectionState.Connected) {
+        while (connection.state === signalR.HubConnectionState.Connected) {
+            try {
+                await connection.invoke("Join", usuario);
+                console.log("Join enviado");
+                break;
+            } catch (error) {
+                console.error("Error Join:", error);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+        }
+    }
 
 
 }

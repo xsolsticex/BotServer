@@ -42,5 +42,13 @@ namespace BotServer.Hubs
 
 
         }
+
+        public async Task UpdateFollowers(string channel, Dictionary<string, int> message)
+        {
+            Console.WriteLine("Enviando mensaje al contador de seguidores");
+            await Clients.Group(channel).SendAsync("followers",message);
+
+
+        }
     }
 }

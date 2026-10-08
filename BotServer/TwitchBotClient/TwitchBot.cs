@@ -45,7 +45,9 @@ namespace BotServer.TwitchBotClient
             _client.OnMessageReceived += _events.onMessageReceived;
             _client.OnChatCommandReceived += _events.onCommandReceived;
             _client.OnUserJoined += _events.onUserJoined;
-            
+            _client.OnNewSubscriber += _events.newSub;
+            //_client.OnGiftedSubscription += _events.ne;
+
         }
 
         public async Task JoinToChannels(List<string> channels)

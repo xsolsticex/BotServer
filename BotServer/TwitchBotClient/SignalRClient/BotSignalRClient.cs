@@ -11,7 +11,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
         public BotSignalRClient()
         {
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
@@ -95,6 +95,28 @@ namespace BotServer.TwitchBotClient.SignalRClient
             {
                 var sw = Stopwatch.StartNew();
                 await connection.SendAsync("SendFromBot", channel, message);
+                Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+            }
+        }
+
+        public async Task UpdateFollowers(string channel, Dictionary<string, int> message)
+        {
+            // 3. Validación de estado antes de enviar para evitar crashes
+            if (connection.State != HubConnectionState.Connected)
+            {
+                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
+                Console.WriteLine("Estado Actual: " + connection.State);
+                return;
+            }
+
+            try
+            {
+                var sw = Stopwatch.StartNew();
+                await connection.SendAsync("UpdateFollowers", channel, message);
                 Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
             }
             catch (Exception ex)
