@@ -60,6 +60,8 @@ async function Connect() {
 }
 
 async function GetFollows() {
+
+    //const response = await fetch(`http://localhost:8000/data/${usuario}`);
     const response = await fetch(`https://botserver-qccm.onrender.com/data/${usuario}`);
     const data = await response.json();
 
