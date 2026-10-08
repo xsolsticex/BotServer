@@ -197,7 +197,7 @@ namespace BotServer.TwitchBotClient
                     {
 
                         var cnd = new List<string> { "local", "remote" };
-                        var con = cnd[0];
+                        var con = cnd[1];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
 

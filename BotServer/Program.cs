@@ -20,7 +20,7 @@ namespace BotServer
             var path = AppContext.BaseDirectory;
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[0];
+            var con = cnd[1];
             var dbPath = string.Empty;
             if (con == "local")
             {
@@ -120,7 +120,7 @@ namespace BotServer
 
                 var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = cnd[0];
+                var cnt = cnd[1];
 
                 var redirect = "http://localhost:8000/confirm";
 
