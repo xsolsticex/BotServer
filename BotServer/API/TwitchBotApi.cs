@@ -2,6 +2,7 @@
 using BotServer.Database.DTO;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
+using Microsoft.AspNetCore.SignalR;
 using TwitchLib.Api;
 using TwitchLib.Api.Auth;
 using TwitchLib.Api.Core.Enums;
@@ -31,6 +32,8 @@ namespace BotServer.API
 
         public async Task<bool> CheckEventSubs(string eventType, string broadcasterId)
         {
+
+    
             var le = new TwitchLib.Api.Helix.Models.EventSub.GetEventSubSubscriptionsRequest { Type = eventType };
             var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync();
             //var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(le,clientId: _api.Settings.ClientId);
@@ -50,7 +53,7 @@ namespace BotServer.API
 
         }
 
-        public async Task RegisterEvent(string type, string version, Dictionary<string, string> condition)
+        public async Task ClearAllEventSub()
         {
             var cl = new TwitchAPI();
             cl.Settings.ClientId = _api.Settings.ClientId;
@@ -58,23 +61,61 @@ namespace BotServer.API
 
             var token = await cl.Auth.GetAccessTokenAsync();
 
-            var validation = await _api.Auth.ValidateAccessTokenAsync(token);
+            while (true)
+            {
+                var subs = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(accessToken: token,clientId:cl.Settings.ClientId);
 
-            if (validation == null)
-                throw new Exception("Token inválido");
+                if (subs.Subscriptions.Length == 0) break;
 
-            Console.WriteLine($"ClientId: {validation.ClientId}");
-            Console.WriteLine($"UserId: {validation.UserId}");
+                foreach (var item in subs.Subscriptions)
+                {
+                    await _api.Helix.EventSub
+                .DeleteEventSubSubscriptionAsync(
+                    item.Id,
+                    accessToken: token
+                );
+                }
 
-            if (!string.IsNullOrEmpty(validation.UserId))
-                throw new Exception("El token es de usuario, no de aplicación");
 
-            bool isLocal = false;
-            var testurl = isLocal ? "https://cancel-heave-tackiness.ngrok-free.dev/eventSub" : "https://botserver-qccm.onrender.com/eventSub";
+            }
+
+            Console.WriteLine("Todas las suscripciones eliminadas");
+        }
+
+        public async Task RegisterEvent(string type, string version, Dictionary<string, string> condition)
+        {
+
+            try
+            {
+                var cl = new TwitchAPI();
+                cl.Settings.ClientId = _api.Settings.ClientId;
+                cl.Settings.Secret = _api.Settings.Secret;
+
+                var token = await cl.Auth.GetAccessTokenAsync();
+
+                var validation = await _api.Auth.ValidateAccessTokenAsync(token);
+
+                if (validation == null)
+                    throw new Exception("Token inválido");
+
+                Console.WriteLine($"ClientId: {validation.ClientId}");
+                Console.WriteLine($"UserId: {validation.UserId}");
+
+                if (!string.IsNullOrEmpty(validation.UserId))
+                    throw new Exception("El token es de usuario, no de aplicación");
+
+                bool isLocal = false;
+                var testurl = isLocal ? "https://cancel-heave-tackiness.ngrok-free.dev/eventSub" : "https://botserver-qccm.onrender.com/eventSub";
+
+                var result = await _api.Helix.EventSub.CreateEventSubSubscriptionAsync(type, version, condition, method: EventSubTransportMethod.Webhook, webhookCallback: testurl, webhookSecret: Environment.GetEnvironmentVariable("HOOK_SECRET"), accessToken: token);
+
+            }
+            catch (Exception a)
+            {
+                Console.WriteLine(a);
+            }
+
             
-            var result = await _api.Helix.EventSub.CreateEventSubSubscriptionAsync(type, version, condition, method: EventSubTransportMethod.Webhook, webhookCallback: testurl, webhookSecret: Environment.GetEnvironmentVariable("HOOK_SECRET"), accessToken: token);
-
-            //var transport = new EventSubTransport { Method = EventSubTransportMethod.Webhook.ToString(), Callback = "http://localhost:8000/eventSub" };
 
         }
 

@@ -33,6 +33,8 @@ namespace BotServer.TwitchBotClient
             Console.WriteLine("Connected");
             await _api.GetChannelBadges();
 
+            await _api.ClearAllEventSub();
+
         }
 
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
@@ -54,25 +56,13 @@ namespace BotServer.TwitchBotClient
                 var exists = await _api.CheckEventSubs("channel.follow", user.TwitchId);
 
 
-                try
+                if (!exists)
                 {
-                    if (!exists)
-                    {
-                        await _api.RegisterEvent("channel.follow", "2", condition);
+                    await _api.RegisterEvent("channel.follow", "2", condition);
 
-                        Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
-
-                    }
+                    Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
 
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[EventSub] Error al registrar channel.follow: {ex.Message}");
-                    Console.WriteLine(ex.ToString());
-                }
-
-
-
 
                 await _api.GetCustomBadges(user.TwitchId, channel);
 

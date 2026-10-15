@@ -34,6 +34,8 @@ namespace BotServer
                 dbPath = "/data/twitch.db";
             }
 
+            //Temporal
+            //dbPath = Path.Combine(path, "twitch.db");
 
 
             var builder = WebApplication.CreateBuilder(args);
