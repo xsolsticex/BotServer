@@ -22,9 +22,13 @@
     <PackageReference Include="TwitchLib.Api.Helix.Models" Version="3.10.2" />
     <PackageReference Include="TwitchLib.Client" Version="4.0.1" />
     <PackageReference Include="TwitchLib.Client.Models" Version="4.0.1" />
+    <PackageReference Include="TwitchLib.EventSub.Webhooks" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\achievement.mp3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\Avengers.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -71,6 +75,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\lib\microsoft-signalr\signalr.min.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\logro.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\logro.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\logro.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\MRC.png">

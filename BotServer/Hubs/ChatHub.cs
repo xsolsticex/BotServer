@@ -35,6 +35,25 @@ namespace BotServer.Hubs
 
         }
 
+
+        public async Task SendFollower(string channel, Dictionary<string, string> message)
+        {
+
+            try
+            {
+                Console.WriteLine("Mensaje recibido del bot");
+                Console.WriteLine($"Canal : {channel} -  Seguidor: ${message["follow"]}");
+                await Clients.Group(channel).SendAsync("newFollow", message);
+                //await Clients.Group(channel).SendAsync("RespuestaServer", message);
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+        }
+
         public async Task UpdateCounter(string channel,string counter_state)
         {
             Console.WriteLine("Enviando mensaje al contador");

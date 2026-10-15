@@ -39,10 +39,40 @@ namespace BotServer.TwitchBotClient
         {
             try
             {
+                var channel = e.Channel;
                 var service = _scope.CreateScope();
                 var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
-                var channel = e.Channel;
+                var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
+
+                //var userToken = await tokensdb.GetAccessToken(channel);
+
+
                 var user = await _api.GetUserData(channel);
+
+                var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
+
+                var exists = await _api.CheckEventSubs("channel.follow", user.TwitchId);
+
+
+                try
+                {
+                    if (!exists)
+                    {
+                        await _api.RegisterEvent("channel.follow", "2", condition);
+
+                        Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
+
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EventSub] Error al registrar channel.follow: {ex.Message}");
+                    Console.WriteLine(ex.ToString());
+                }
+
+
+
 
                 await _api.GetCustomBadges(user.TwitchId, channel);
 
@@ -76,7 +106,8 @@ namespace BotServer.TwitchBotClient
                 if (element == "bot-badge")
                 {
                     element = "Chat Bot";
-                }else if(element == "premium")
+                }
+                else if (element == "premium")
                 {
                     element = "Prime Gaming";
                 }
@@ -117,9 +148,9 @@ namespace BotServer.TwitchBotClient
 
 
                 //Obtiene las globales
-                 var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
+                var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
 
-      
+
                 if (customBadges != null)
                 {
                     foreach (var (setId, url) in customBadges)
@@ -133,7 +164,7 @@ namespace BotServer.TwitchBotClient
                 List<string> res = new();
                 foreach (var setId in badges)
                 {
-               
+
                     res.Add(badgesurl[setId.ToLower()]);
                 }
 
@@ -186,13 +217,13 @@ namespace BotServer.TwitchBotClient
                     await _client.SendMessageAsync(channel, timeToString);
                     break;
 
-                 case "join":
+                case "join":
 
-                    
+
                     var service = _scope.CreateScope();
                     var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                     var exists = await db.FindChannel(username);
-                
+
                     if (exists == null)
                     {
 
@@ -208,7 +239,7 @@ namespace BotServer.TwitchBotClient
 
                             await _client.JoinChannelAsync(username);
                             await db.AddChannel(username);
-              
+
 
                             if (con == "remote")
                             {
@@ -221,7 +252,7 @@ namespace BotServer.TwitchBotClient
 
                             Console.WriteLine(a);
                         }
- 
+
 
                         //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
 
@@ -244,12 +275,20 @@ namespace BotServer.TwitchBotClient
                     await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/status/{username.ToLower()}");
                     break;
 
+                case "notifier":
+                    await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/notifier/{username.ToLower()}");
+                    break;
+
                 case "chat":
                     await _client.SendReplyAsync(channel, messageID, $"https://botserver-qccm.onrender.com/chat/{username.ToLower()}");
                     break;
 
                 case "win":
-                    await _signalR.UpdateCounter(channel, "win");
+                    if (username.ToLower().Equals(channel.ToLower()))
+                    {
+                        await _signalR.UpdateCounter(channel, "win");
+                    }
+
                     break;
 
                 case "help":
@@ -292,7 +331,7 @@ namespace BotServer.TwitchBotClient
 
         internal async Task SubsHandler(object? sender, EventArgs e)
         {
-            
+
         }
 
         internal async Task newSub(object? sender, OnNewSubscriberArgs e)
@@ -308,17 +347,17 @@ namespace BotServer.TwitchBotClient
             var user = await usersDb.GetUser(channel);
             var channelData = await db.FindChannel(channel);
 
-            if(channelData != null && user != null)
+            if (channelData != null && user != null)
             {
                 var followers = await _api.GetFollowers(user.Username, user.UserId);
                 var subs = await _api.GetFollowers(user.Username, user.UserId);
 
                 await db.UpdateChannel(channel, followers, subs);
                 await _signalR.UpdateFollowers(channel, new Dictionary<string, int> { { "followers", followers }, { "subs", subs } });
-               
+
             }
-    
-            
+
+
         }
     }
 }

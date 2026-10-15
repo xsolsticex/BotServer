@@ -16,6 +16,8 @@ namespace BotServer.TwitchBotClient
         private BotSignalRClient _signalR;
         private SpotyClient _spoty;
 
+        private string? main;
+
         public TwitchBot(BotEventHandler events,IServiceScopeFactory scope, BotSignalRClient signalR,SpotyClient spoty)
         {
             
@@ -46,6 +48,7 @@ namespace BotServer.TwitchBotClient
             _client.OnChatCommandReceived += _events.onCommandReceived;
             _client.OnUserJoined += _events.onUserJoined;
             _client.OnNewSubscriber += _events.newSub;
+     
             //_client.OnGiftedSubscription += _events.ne;
 
         }
@@ -58,25 +61,25 @@ namespace BotServer.TwitchBotClient
 
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public async Task InitializeTwitch()
         {
-
-            //await _spoty.GetSong();
-            await _signalR.StartClient();
-            var main = Environment.GetEnvironmentVariable("MAIN_CHANNEL");
+            main = Environment.GetEnvironmentVariable("MAIN_CHANNEL");
             using var fscope = _scope.CreateScope();
 
             var fac = fscope.ServiceProvider.GetRequiredService<TwitchClientFactory>();
 
-            _client = await fac.Create(main,false);
-      
+            _client = await fac.Create(main, false);
+
             RegisterEvents();
 
             _events.Initialize(_client);
 
             await _client.ConnectAsync();
+        }
 
-            var service = _scope.CreateScope();
+        public async Task InitializeChannels()
+        {
+            using var service = _scope.CreateScope();
 
             var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
 
@@ -86,17 +89,25 @@ namespace BotServer.TwitchBotClient
 
             var ch = await db.GetChannels();
 
-            if(ch.Count == 0)
+            if (ch.Count == 0)
             {
                 ch.Add(main);
                 await db.AddChannel(main);
             }
 
             await JoinToChannels(ch);
-            
+        }
 
-            
-            
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+
+            //await _spoty.GetSong();
+
+            await _signalR.StartClient();
+
+            await InitializeTwitch();
+
+            await InitializeChannels();
 
             try
             {

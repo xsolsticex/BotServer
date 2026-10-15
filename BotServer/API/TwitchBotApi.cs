@@ -2,12 +2,12 @@
 using BotServer.Database.DTO;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
-using System.Diagnostics;
-using System.Security.AccessControl;
 using TwitchLib.Api;
 using TwitchLib.Api.Auth;
+using TwitchLib.Api.Core.Enums;
+
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using TwitchLib.EventSub.Core.Models;
 
 namespace BotServer.API
 {
@@ -18,19 +18,71 @@ namespace BotServer.API
 
         private string redirectUri = "https://botserver-qccm.onrender.com/confirm";
 
-        public TwitchBotApi(TwitchAPI api,IServiceScopeFactory scope)
+        public TwitchBotApi(TwitchAPI api, IServiceScopeFactory scope)
         {
             _api = api;
             _service = scope;
-            _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID"); 
+            _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID");
             _api.Settings.Secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-  
+
+
+
+        }
+
+        public async Task<bool> CheckEventSubs(string eventType, string broadcasterId)
+        {
+            var le = new TwitchLib.Api.Helix.Models.EventSub.GetEventSubSubscriptionsRequest { Type = eventType };
+            var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync();
+            //var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(le,clientId: _api.Settings.ClientId);
+
+            Console.WriteLine(events.Subscriptions.Length);
+            foreach (var sub in events.Subscriptions)
+            {
+                Console.WriteLine(
+    $"ID: {sub.Id} | " +
+    $"Type: {sub.Type} | " +
+    $"Status: {sub.Status} | " +
+    $"Broadcaster: {sub.Condition.Values}"
+);
+            }
+
+            return true;
+
+        }
+
+        public async Task RegisterEvent(string type, string version, Dictionary<string, string> condition)
+        {
+            var cl = new TwitchAPI();
+            cl.Settings.ClientId = _api.Settings.ClientId;
+            cl.Settings.Secret = _api.Settings.Secret;
+
+            var token = await cl.Auth.GetAccessTokenAsync();
+
+            var validation = await _api.Auth.ValidateAccessTokenAsync(token);
+
+            if (validation == null)
+                throw new Exception("Token inválido");
+
+            Console.WriteLine($"ClientId: {validation.ClientId}");
+            Console.WriteLine($"UserId: {validation.UserId}");
+
+            if (!string.IsNullOrEmpty(validation.UserId))
+                throw new Exception("El token es de usuario, no de aplicación");
+
+            bool isLocal = false;
+            var testurl = isLocal ? "https://cancel-heave-tackiness.ngrok-free.dev/eventSub" : "https://botserver-qccm.onrender.com/eventSub";
+            
+            var result = await _api.Helix.EventSub.CreateEventSubSubscriptionAsync(type, version, condition, method: EventSubTransportMethod.Webhook, webhookCallback: testurl, webhookSecret: Environment.GetEnvironmentVariable("HOOK_SECRET"), accessToken: token);
+
+            //var transport = new EventSubTransport { Method = EventSubTransportMethod.Webhook.ToString(), Callback = "http://localhost:8000/eventSub" };
+
         }
 
 
         public async Task<UserToken?> GetTokenWithCode(string code)
         {
             AuthCodeResponse token = await _api.Auth.GetAccessTokenFromCodeAsync(code, clientId: _api.Settings.ClientId, clientSecret: _api.Settings.Secret, redirectUri: "https://botserver-qccm.onrender.com/confirm");
+
             if (token is not null)
             {
                 return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
@@ -45,17 +97,17 @@ namespace BotServer.API
         public async Task<ValidateAccessTokenResponse?> ValidateToken(string token)
         {
             var isValid = await _api.Auth.ValidateAccessTokenAsync(accessToken: token);
-            
-            if(isValid is not null)
+
+            if (isValid is not null)
             {
                 return isValid;
             }
             return null;
 
-            
+
         }
 
-        public async Task<int> GetFollowers(string username,string userid)
+        public async Task<int> GetFollowers(string username, string userid)
         {
 
             try
@@ -105,7 +157,7 @@ namespace BotServer.API
         {
             try
             {
-          
+
                 var token = await GetValidToken("xhipibotx");
                 var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username });
 
@@ -113,7 +165,7 @@ namespace BotServer.API
                 {
                     return user.Users.First().ProfileImageUrl;
                 }
-          
+
             }
             catch (Exception e)
             {
@@ -125,14 +177,26 @@ namespace BotServer.API
 
         }
 
+
+        public async Task<string> GetAppToken()
+        {
+            var client = new TwitchAPI();
+            client.Settings.ClientId = _api.Settings.ClientId;
+            client.Settings.Secret = _api.Settings.Secret;
+
+            var appToken = await _api.Auth.GetAccessTokenAsync();
+
+            return appToken;
+        }
+
         public async Task<Users> GetUserData(string username)
         {
             try
             {
 
                 var token = await GetValidToken("xhipibotx");
-                
-                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username },accessToken:  token.AccessToken);
+
+                var user = await _api.Helix.Users.GetUsersAsync(logins: new List<string> { username }, accessToken: token.AccessToken);
 
                 if (user is not null)
                 {
@@ -158,7 +222,7 @@ namespace BotServer.API
         public async Task<UserToken> RefreshToken(string refreshtoken)
         {
 
-            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken,  _api.Settings.Secret, _api.Settings.ClientId );
+            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, _api.Settings.Secret, _api.Settings.ClientId);
 
             return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
         }
@@ -194,14 +258,14 @@ namespace BotServer.API
         public async Task<UserToken> GetValidToken(string username)
         {
             var service = _service.CreateScope();
-            var tokenService = service.ServiceProvider.GetRequiredService<TokensService>();    
+            var tokenService = service.ServiceProvider.GetRequiredService<TokensService>();
             var token = await tokenService.GetAccessToken(username);
 
             if (token == null)
                 throw new Exception($"No existe un token para el usuario '{username}'.");
 
             var isValid = await ValidateToken(token.AccessToken);
-            
+
             if (isValid == null)
             {
                 //refreshed token
@@ -213,7 +277,7 @@ namespace BotServer.API
                 await tokenService.SaveData();
 
                 isValid = await ValidateToken(token.AccessToken);
-                        
+
             }
 
             _api.Settings.AccessToken = token.AccessToken;
@@ -227,7 +291,7 @@ namespace BotServer.API
 
         public async Task GetChannelBadges()
         {
-            var badges  = await _api.Helix.Chat.GetGlobalChatBadgesAsync();
+            var badges = await _api.Helix.Chat.GetGlobalChatBadgesAsync();
             var emoteSet = badges.EmoteSet;
             List<GlobalBadges> globalBadges = new();
 
@@ -240,24 +304,24 @@ namespace BotServer.API
                     name = string.Join(" ", name_splited);
                 }
 
-                if(name.Contains("   "))
+                if (name.Contains("   "))
                 {
-                    name = name.Replace("   "," ");
+                    name = name.Replace("   ", " ");
                 }
-        
-                globalBadges.Add(new GlobalBadges { BadgeId= item.Versions.First().Id, name=name,url=item.Versions.First().ImageUrl1x });
-     
+
+                globalBadges.Add(new GlobalBadges { BadgeId = item.Versions.First().Id, name = name, url = item.Versions.First().ImageUrl1x });
+
             }
 
             var scope = _service.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
 
             await db.AddBadges(globalBadges);
-            
+
 
         }
 
-        public async Task GetCustomBadges(string broadcaster_id,string channel)
+        public async Task GetCustomBadges(string broadcaster_id, string channel)
         {
             List<CustomBadge> globalBadges = new();
 
@@ -268,7 +332,7 @@ namespace BotServer.API
 
             //Get channel info
             var channelid = await channelsDb.GetChannelId(channel);
-            var badges = await _api.Helix.Chat.GetChannelChatBadgesAsync(broadcaster_id=broadcaster_id);
+            var badges = await _api.Helix.Chat.GetChannelChatBadgesAsync(broadcaster_id = broadcaster_id);
             var emoteSet = badges.EmoteSet;
 
 
@@ -279,7 +343,7 @@ namespace BotServer.API
                 globalBadges.Add(new CustomBadge { SetId = item.Versions.First().Title, Channel = channel, BadgeUrl = item.Versions.First().ImageUrl1x });
             }
 
-     
+
             await db.AddAllBadges(globalBadges);
 
 

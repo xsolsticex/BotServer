@@ -103,6 +103,30 @@ namespace BotServer.TwitchBotClient.SignalRClient
             }
         }
 
+
+        public async Task SendFollow(string channel, Dictionary<string, string> message)
+        {
+            // 3. Validación de estado antes de enviar para evitar crashes
+            if (connection.State != HubConnectionState.Connected)
+            {
+                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
+                Console.WriteLine("Estado Actual: " + connection.State);
+                return;
+            }
+
+            try
+            {
+                var sw = Stopwatch.StartNew();
+                await connection.SendAsync("SendFollower", channel, message);
+                Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+            }
+        }
+
+
         public async Task UpdateFollowers(string channel, Dictionary<string, int> message)
         {
             // 3. Validación de estado antes de enviar para evitar crashes
