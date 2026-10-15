@@ -4,7 +4,7 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAu
 const data = document.getElementById("data");
 const image = document.getElementById("logo");
 const logroContent = document.getElementById("logroContent");
-const sound = new Audio("http://localhost:8000/achievement.mp3");
+const sound = new Audio("https://botserver-qccm.onrender.com/achievement.mp3");
 const usuario = window.location.pathname.split("/").pop();
 
 console.log(usuario);
@@ -50,7 +50,7 @@ function openMessage(message) {
 
 
 async function GetLogo(usuario) {
-    const response = await fetch(`http://localhost:8000/profile/${usuario}`);
+    const response = await fetch(`https://botserver-qccm.onrender.com/profile/${usuario}`);
 
     if (!response.ok) {
         throw new Error("Error al obtener el perfil");
