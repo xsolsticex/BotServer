@@ -14,6 +14,8 @@ namespace BotServer.TwitchBotClient
         private IServiceScopeFactory _scope;
         private BotSignalRClient _signalR;
 
+        public bool eventsInitialized { get; set; } = false;
+
         public BotEventHandler(BotSignalRClient signalR, TwitchBotApi api, IServiceScopeFactory scope)
         {
             _signalR = signalR;
@@ -33,15 +35,26 @@ namespace BotServer.TwitchBotClient
             Console.WriteLine("Connected");
             await _api.GetChannelBadges();
 
-            await _api.ClearAllEventSub();
+
+
+
+ 
 
         }
 
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
         {
+
             try
             {
-                var channel = e.Channel;
+				if (eventsInitialized == false)
+				{
+
+					await _api.ClearAllEventSub();
+
+					eventsInitialized = true;
+				}
+				var channel = e.Channel;
                 var service = _scope.CreateScope();
                 var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                 var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();

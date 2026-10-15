@@ -34,9 +34,6 @@ namespace BotServer
                 dbPath = "/data/twitch.db";
             }
 
-            //Temporal
-            //dbPath = Path.Combine(path, "twitch.db");
-
 
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSignalR(options =>
@@ -70,8 +67,6 @@ namespace BotServer
                 var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{spotify_id}:{spotify_secret}"));
 
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-
 
                 return new SpotyTokenManager(client);
 

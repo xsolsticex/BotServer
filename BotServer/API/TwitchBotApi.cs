@@ -30,27 +30,39 @@ namespace BotServer.API
 
         }
 
-        public async Task<bool> CheckEventSubs(string eventType, string broadcasterId)
+        public async Task<bool> CheckEventSubs(
+            string eventType,
+            string broadcasterId)
         {
+            var events = await _api.Helix.EventSub
+                .GetEventSubSubscriptionsAsync();
 
-    
-            var le = new TwitchLib.Api.Helix.Models.EventSub.GetEventSubSubscriptionsRequest { Type = eventType };
-            var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync();
-            //var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(le,clientId: _api.Settings.ClientId);
+            const string callback =
+                "https://botserver-qccm.onrender.com/eventSub";
 
-            Console.WriteLine(events.Subscriptions.Length);
             foreach (var sub in events.Subscriptions)
             {
                 Console.WriteLine(
-    $"ID: {sub.Id} | " +
-    $"Type: {sub.Type} | " +
-    $"Status: {sub.Status} | " +
-    $"Broadcaster: {sub.Condition.Values}"
-);
+                    $"ID: {sub.Id} | " +
+                    $"Type: {sub.Type} | " +
+                    $"Status: {sub.Status} | " +
+                    $"Callback: {sub.Transport.Callback}"
+                );
+
+                if (sub.Type == eventType &&
+                    sub.Condition.TryGetValue(
+                        "broadcaster_user_id",
+                        out var id) &&
+                    id == broadcasterId &&
+                    sub.Transport.Callback == callback &&
+                    (sub.Status == "enabled" ||
+                     sub.Status == "webhook_callback_verification_pending"))
+                {
+                    return true;
+                }
             }
 
-            return true;
-
+            return false;
         }
 
         public async Task ClearAllEventSub()
