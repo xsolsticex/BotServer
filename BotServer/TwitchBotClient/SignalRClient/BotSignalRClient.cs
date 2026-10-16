@@ -11,7 +11,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
         public BotSignalRClient()
         {
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
@@ -168,6 +168,11 @@ namespace BotServer.TwitchBotClient.SignalRClient
                 Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
             }
 
+        }
+
+        internal async Task ChangeColor(string channel, string color)
+        {
+            await connection.SendAsync("ChangeColor", channel, color);
         }
     }
 }

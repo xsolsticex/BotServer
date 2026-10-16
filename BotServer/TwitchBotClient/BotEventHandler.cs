@@ -38,7 +38,7 @@ namespace BotServer.TwitchBotClient
 
 
 
- 
+
 
         }
 
@@ -47,14 +47,14 @@ namespace BotServer.TwitchBotClient
 
             try
             {
-				if (eventsInitialized == false)
-				{
+                if (eventsInitialized == false)
+                {
 
-					await _api.ClearAllEventSub();
+                    await _api.ClearAllEventSub();
 
-					eventsInitialized = true;
-				}
-				var channel = e.Channel;
+                    eventsInitialized = true;
+                }
+                var channel = e.Channel;
                 var service = _scope.CreateScope();
                 var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                 var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
@@ -210,6 +210,7 @@ namespace BotServer.TwitchBotClient
             var username = e.ChatMessage.Username;
             var user = e.ChatMessage.UserId;
             var messageID = e.ChatMessage.Id.ToString();
+            
 
             switch (command)
             {
@@ -220,6 +221,29 @@ namespace BotServer.TwitchBotClient
                     await _client.SendMessageAsync(channel, timeToString);
                     break;
 
+                //case "asco":
+                //	TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
+                //	var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
+                //	var timeToString = time.ToString();
+                //	await _client.SendMessageAsync(channel, timeToString);
+                //	break;
+
+
+                case "color":
+                    //Cambiar color chat
+                    var color = e.Command.ArgumentsAsList[0];
+                    if (!string.IsNullOrEmpty(color))
+                    {
+                        if (!color.StartsWith('#'))
+                        {
+                            color = "#" + color;
+                        }
+             
+                        await _signalR.ChangeColor(channel, color);
+                    }
+
+
+                    break;
                 case "join":
 
 
@@ -231,7 +255,7 @@ namespace BotServer.TwitchBotClient
                     {
 
                         var cnd = new List<string> { "local", "remote" };
-                        var con = cnd[1];
+                        var con = cnd[0];
                         var urlOBS = $"http://localhost:8000/chat/{username}";
                         var urlAuth = $"http://localhost:8000/connect";
 

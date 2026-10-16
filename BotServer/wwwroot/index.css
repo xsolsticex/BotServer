@@ -1,3 +1,7 @@
+:root {
+    --border-message: #66b2ff
+}
+
 @font-face {
     font-family: "Decaydence";
     src: url("/fonts/Decaydence Straight.otf");
@@ -36,7 +40,7 @@ body {
     max-width: 90%;
     min-height: 5%;
     /* border: 3px solid #ff3737; Dani */
-    border: 3px solid #66b2ff;
+    border: 3px solid var(--border-message);
     border-radius: 10px;
     display: flex;
     box-shadow: 1px;

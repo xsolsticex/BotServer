@@ -23,7 +23,7 @@ namespace BotServer
             var path = AppContext.BaseDirectory;
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             var dbPath = string.Empty;
             if (con == "local")
             {
@@ -33,7 +33,7 @@ namespace BotServer
             {
                 dbPath = "/data/twitch.db";
             }
-
+            dbPath = Path.Combine(path, "twitch.db");
 
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSignalR(options =>
@@ -141,7 +141,7 @@ namespace BotServer
 
                 var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = cnd[1];
+                var cnt = cnd[0];
 
                 var redirect = "http://localhost:8000/confirm";
 

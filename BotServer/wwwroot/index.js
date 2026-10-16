@@ -11,6 +11,20 @@ connection.on("botMessage", message => {
 });
 
 
+connection.on("ColorChanged", message => {
+    console.log(message);
+
+    if (CSS.supports("color", message)) {
+
+        document.documentElement.style.setProperty("--border-message", message);
+    } else {
+        document.documentElement.style.setProperty("--border-message", "#66b2ff");
+    }
+
+    //createMessage(message);
+});
+
+
 connection.onreconnecting(error => {
     console.log("Reconectando...", error);
 });

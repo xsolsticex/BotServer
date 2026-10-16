@@ -30,12 +30,20 @@ namespace BotServer.API
 
         }
 
+
+        //public async Task GetChatters(string broadcasterId)
+        //{
+        //    var chatters = await _api.Helix.Chat.GetChattersAsync(broadcasterId,broadcasterId);
+
+        //    return chatters;
+
+        //}
+
         public async Task<bool> CheckEventSubs(
             string eventType,
             string broadcasterId)
         {
-            var events = await _api.Helix.EventSub
-                .GetEventSubSubscriptionsAsync();
+            var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync();
 
             const string callback =
                 "https://botserver-qccm.onrender.com/eventSub";
@@ -406,7 +414,7 @@ namespace BotServer.API
         {
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";

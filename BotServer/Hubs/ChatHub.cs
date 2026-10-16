@@ -35,6 +35,24 @@ namespace BotServer.Hubs
 
         }
 
+        public async Task ChangeColor(string channel, string color)
+        {
+
+            try
+            {
+                Console.WriteLine("Mensaje recibido del bot");
+                await Clients.Group(channel).SendAsync("ColorChanged", color);
+                //await Clients.Group(channel).SendAsync("RespuestaServer", message);
+            }
+            catch (Exception e)
+            {
+
+                Console.WriteLine(e);
+            }
+
+        }
+
+
 
         public async Task SendFollower(string channel, Dictionary<string, string> message)
         {
