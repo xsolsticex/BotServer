@@ -11,7 +11,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
         public BotSignalRClient()
         {
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[0];
+            var con = cnd[1];
             if (con == "local")
             {
                 connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
