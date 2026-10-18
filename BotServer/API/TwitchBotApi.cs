@@ -66,10 +66,12 @@ namespace BotServer.API
         //}
 
         public async Task<bool> CheckEventSubs(
-            string eventType,
-            string broadcasterId)
+    string eventType,
+    string broadcasterId,
+    string? botId = null)
         {
-            var events = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync();
+            var events = await _api.Helix.EventSub
+                .GetEventSubSubscriptionsAsync();
 
             const string callback =
                 "https://botserver-qccm.onrender.com/eventSub";
@@ -83,17 +85,28 @@ namespace BotServer.API
                     $"Callback: {sub.Transport.Callback}"
                 );
 
-                if (sub.Type == eventType &&
-                    sub.Condition.TryGetValue(
-                        "broadcaster_user_id",
-                        out var id) &&
-                    id == broadcasterId &&
-                    sub.Transport.Callback == callback &&
-                    (sub.Status == "enabled" ||
-                     sub.Status == "webhook_callback_verification_pending"))
+                if (sub.Type != eventType ||
+                    sub.Status != "enabled" ||
+                    sub.Transport.Callback != callback ||
+                    !sub.Condition.TryGetValue(
+                        "broadcaster_user_id", out var id) ||
+                    id != broadcasterId)
                 {
-                    return true;
+                    continue;
                 }
+
+                if (eventType == "channel.chat.message")
+                {
+                    if (botId == null ||
+                        !sub.Condition.TryGetValue(
+                            "user_id", out var userId) ||
+                        userId != botId)
+                    {
+                        continue;
+                    }
+                }
+
+                return true;
             }
 
             return false;

@@ -47,13 +47,13 @@ namespace BotServer.TwitchBotClient
 
             try
             {
-                if (eventsInitialized == false)
-                {
+                //if (eventsInitialized == false)
+                //{
 
-                    await _api.ClearAllEventSub();
+                //    await _api.ClearAllEventSub();
 
-                    eventsInitialized = true;
-                }
+                //    eventsInitialized = true;
+                //}
                 var channel = e.Channel;
                 var service = _scope.CreateScope();
                 var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
@@ -82,7 +82,7 @@ namespace BotServer.TwitchBotClient
 
                 }
 
-                exists = await _api.CheckEventSubs("channel.chat.message", user.TwitchId);
+                exists = await _api.CheckEventSubs("channel.chat.message", user.TwitchId,bot.TwitchId);
 
                 if (!exists)
                 {
