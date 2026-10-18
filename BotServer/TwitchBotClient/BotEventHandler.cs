@@ -64,16 +64,31 @@ namespace BotServer.TwitchBotClient
 
                 var user = await _api.GetUserData(channel);
 
+
+                var bot = await _api.GetUserData("xhipibotx");
+
                 var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
 
                 var exists = await _api.CheckEventSubs("channel.follow", user.TwitchId);
 
-
+                var messagesCondition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId },{ "user_id", bot.TwitchId } };
+                
                 if (!exists)
                 {
                     await _api.RegisterEvent("channel.follow", "2", condition);
 
+
                     Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
+
+                }
+
+                exists = await _api.CheckEventSubs("channel.chat.message", user.TwitchId);
+
+                if (!exists)
+                {
+                    await _api.RegisterEvent("channel.chat.message", "1", messagesCondition);
+
+                    Console.WriteLine("[EventSub] Evento channel.chat.message registrado correctamente.");
 
                 }
 
@@ -218,7 +233,13 @@ namespace BotServer.TwitchBotClient
                     TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
                     var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
                     var timeToString = time.ToString();
-                    await _client.SendMessageAsync(channel, timeToString);
+
+                    var us = await _api.GetUserData(channel);
+                    var bot = await _api.GetUserData("xhipibotx");
+                    var token = await _api.GetAppToken();
+
+                    await _api.SendChatMessage(us.TwitchId, bot.TwitchId, timeToString,token);
+                    //await _client.SendMessageAsync(channel, timeToString);
                     break;
 
                 //case "asco":

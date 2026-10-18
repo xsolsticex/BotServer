@@ -2,13 +2,11 @@
 using BotServer.Database.DTO;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
-using Microsoft.AspNetCore.SignalR;
 using TwitchLib.Api;
 using TwitchLib.Api.Auth;
 using TwitchLib.Api.Core.Enums;
-
+using TwitchLib.Api.Helix.Models.Channels.SendChatMessage;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using TwitchLib.EventSub.Core.Models;
 
 namespace BotServer.API
 {
@@ -25,9 +23,37 @@ namespace BotServer.API
             _service = scope;
             _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID");
             _api.Settings.Secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+            GenerateScopesUrl();
 
 
 
+        }
+
+        public string GenerateScopesUrl()
+        {
+            List<string> scopes = new()
+    {
+        "chat:edit",
+        "moderator:manage:banned_users",
+        "chat:read",
+        "channel:manage:vips",
+        "channel:manage:moderators",
+        "channel:manage:polls",
+        "moderator:manage:shoutouts",
+        "user:manage:whispers",
+        "clips:edit",
+        "channel:manage:broadcast",
+        "moderator:manage:chat_messages",
+        "channel:read:subscriptions",
+        "moderator:read:followers",
+
+        // Scopes para identificar la cuenta como bot
+        "user:bot",
+        "user:read:chat",
+        "user:write:chat"
+    };
+
+            return string.Join("%20", scopes);
         }
 
 
@@ -73,6 +99,12 @@ namespace BotServer.API
             return false;
         }
 
+
+        public async Task SendChatMessage(string broadcasterId,string botid,string message,string token)
+        {
+            var request = new SendChatMessageRequest { BroadcasterId = broadcasterId, SenderId = botid, Message = message };
+            await _api.Helix.Chat.SendChatMessage(request,token);
+        }
         public async Task ClearAllEventSub()
         {
             var cl = new TwitchAPI();
@@ -83,7 +115,7 @@ namespace BotServer.API
 
             while (true)
             {
-                var subs = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(accessToken: token,clientId:cl.Settings.ClientId);
+                var subs = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(accessToken: token, clientId: cl.Settings.ClientId);
 
                 if (subs.Subscriptions.Length == 0) break;
 
@@ -135,7 +167,7 @@ namespace BotServer.API
                 Console.WriteLine(a);
             }
 
-            
+
 
         }
 
@@ -245,7 +277,7 @@ namespace BotServer.API
             client.Settings.ClientId = _api.Settings.ClientId;
             client.Settings.Secret = _api.Settings.Secret;
 
-            var appToken = await _api.Auth.GetAccessTokenAsync();
+            var appToken = await client.Auth.GetAccessTokenAsync();
 
             return appToken;
         }
@@ -419,8 +451,9 @@ namespace BotServer.API
             {
                 redirectUri = "http://localhost:8000/confirm";
             }
-
-            Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages%20channel:read:subscriptions%20moderator:read:followers&response_type=code&force_verify=true");
+            var scopes = GenerateScopesUrl();
+            //Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages%20channel:read:subscriptions%20moderator:read:followers&response_type=code&force_verify=true");
+            Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope={scopes}&response_type=code&force_verify=true");
             await Task.Delay(8000);
         }
 
