@@ -33,7 +33,7 @@ namespace BotServer
             {
                 dbPath = "/data/twitch.db";
             }
-            dbPath = Path.Combine(path, "twitch.db");
+            //dbPath = Path.Combine(path, "twitch.db");
 
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddSignalR(options =>
