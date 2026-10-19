@@ -113,10 +113,16 @@ namespace BotServer.API
         }
 
 
-        public async Task SendChatMessage(string broadcasterId,string botid,string message,string token)
+        public async Task SendChatMessage(string broadcasterId, string botid, string message, string token)
         {
             var request = new SendChatMessageRequest { BroadcasterId = broadcasterId, SenderId = botid, Message = message };
-            await _api.Helix.Chat.SendChatMessage(request,token);
+            await _api.Helix.Chat.SendChatMessage(request, token);
+        }
+
+        public async Task ReplyChatMessage(string broadcasterId, string botid, string message, string token,string messageId)
+        {
+            var request = new SendChatMessageRequest { BroadcasterId = broadcasterId, SenderId = botid, Message = message,ReplyParentMessageId = messageId };
+            await _api.Helix.Chat.SendChatMessage(request, token);
         }
         public async Task ClearAllEventSub()
         {
@@ -459,7 +465,7 @@ namespace BotServer.API
         {
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";
