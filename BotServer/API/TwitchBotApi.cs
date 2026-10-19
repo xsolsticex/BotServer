@@ -183,7 +183,9 @@ namespace BotServer.API
             }
             catch (Exception a)
             {
-                Console.WriteLine(a);
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"[EventSub exception] : {a.Message}");
+                Console.ResetColor();
             }
 
 

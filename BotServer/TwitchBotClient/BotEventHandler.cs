@@ -1,4 +1,5 @@
 ﻿using BotServer.API;
+using BotServer.Database.Models;
 using BotServer.Database.Services;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
@@ -27,9 +28,8 @@ namespace BotServer.TwitchBotClient
         {
             _client = client;
 
-
-
         }
+
         public async Task OnConnected(object? sender, OnConnectedEventArgs e)
         {
             Console.WriteLine("Connected");
@@ -37,6 +37,43 @@ namespace BotServer.TwitchBotClient
 
         }
 
+
+        private async Task RegisterNewEvent(string eventType, Users broadcaster, Dictionary<string, string> condition, string level, string bot = null)
+        {
+            var exists = false;
+
+            if (string.IsNullOrEmpty(bot))
+            {
+                exists = await _api.CheckEventSubs(eventType, broadcaster.TwitchId);
+
+            }
+            else
+            {
+                exists = await _api.CheckEventSubs(eventType, broadcaster.TwitchId,bot);
+            }
+
+            if (!exists)
+            {
+
+                await _api.RegisterEvent(eventType, level, condition);
+
+                var message = $"[EventSub] Evento {eventType} ya existe en {broadcaster.Username}";
+                ShowMessage(ConsoleColor.Yellow, message);
+            }
+            else
+            {
+                var message = $"[EventSub] Evento {eventType} con exito en {broadcaster.Username}";
+                ShowMessage(ConsoleColor.Green, message);
+            }
+
+        }
+
+        private void ShowMessage(ConsoleColor color,string message)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
         {
 
@@ -44,42 +81,25 @@ namespace BotServer.TwitchBotClient
             {
 
                 var channel = e.Channel;
+
                 using var service = _scope.CreateScope();
                 var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
                 var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
 
-                
 
-
+                //Get broadcaster and bot ID
                 var user = await _api.GetUserData(channel);
-
-
                 var bot = await _api.GetUserData("xhipibotx");
 
-                var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
 
-                var exists = await _api.CheckEventSubs("channel.follow", user.TwitchId);
+                //Register follows and messages EventSubs
+                var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
 
                 var messagesCondition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "user_id", bot.TwitchId } };
 
-                if (!exists)
-                {
-                    await _api.RegisterEvent("channel.follow", "2", condition);
+                await RegisterNewEvent("channel.follow",user,condition,"2");
 
-
-                    Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
-
-                }
-
-                exists = await _api.CheckEventSubs("channel.chat.message", user.TwitchId, bot.TwitchId);
-
-                if (!exists)
-                {
-                    await _api.RegisterEvent("channel.chat.message", "1", messagesCondition);
-
-                    Console.WriteLine("[EventSub] Evento channel.chat.message registrado correctamente.");
-
-                }
+                await RegisterNewEvent("channel.chat.message", user, messagesCondition, "1",bot.TwitchId);
 
                 await _api.GetCustomBadges(user.TwitchId, channel);
 
