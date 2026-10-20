@@ -2,6 +2,7 @@
 using BotServer.Database.DTO;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
+using BotServer.Interfaces;
 using TwitchLib.Api;
 using TwitchLib.Api.Auth;
 using TwitchLib.Api.Core.Enums;
@@ -153,7 +154,7 @@ namespace BotServer.API
             Console.WriteLine("Todas las suscripciones eliminadas");
         }
 
-        public async Task RegisterEvent(string type, string version, Dictionary<string, string> condition)
+        public async Task RegisterEvent(string type, string version, IEventSubCondition condition) 
         {
 
             try
@@ -178,7 +179,7 @@ namespace BotServer.API
                 bool isLocal = false;
                 var testurl = isLocal ? "https://cancel-heave-tackiness.ngrok-free.dev/eventSub" : "https://botserver-qccm.onrender.com/eventSub";
 
-                var result = await _api.Helix.EventSub.CreateEventSubSubscriptionAsync(type, version, condition, method: EventSubTransportMethod.Webhook, webhookCallback: testurl, webhookSecret: Environment.GetEnvironmentVariable("HOOK_SECRET"), accessToken: token);
+                var result = await _api.Helix.EventSub.CreateEventSubSubscriptionAsync(type, version, condition.ToDictionary(), method: EventSubTransportMethod.Webhook, webhookCallback: testurl, webhookSecret: Environment.GetEnvironmentVariable("HOOK_SECRET"), accessToken: token);
 
             }
             catch (Exception a)

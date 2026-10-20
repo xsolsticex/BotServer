@@ -1,6 +1,7 @@
 ﻿using BotServer.API;
 using BotServer.Database.Models;
 using BotServer.Database.Services;
+using BotServer.Interfaces;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
@@ -38,7 +39,7 @@ namespace BotServer.TwitchBotClient
         }
 
 
-        private async Task RegisterNewEvent(string eventType, Users broadcaster, Dictionary<string, string> condition, string level, string bot = null)
+        private async Task RegisterNewEvent(string eventType, Users broadcaster, IEventSubCondition condition, string level, string bot = null)
         {
             var exists = false;
 
@@ -82,9 +83,9 @@ namespace BotServer.TwitchBotClient
 
                 var channel = e.Channel;
 
-                using var service = _scope.CreateScope();
-                var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
-                var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
+                //using var service = _scope.CreateScope();
+                //var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
+                //var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
 
 
                 //Get broadcaster and bot ID
@@ -93,11 +94,12 @@ namespace BotServer.TwitchBotClient
 
 
                 //Register follows and messages EventSubs
-                var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
+                var followCondition = new FollowCondition {BroadCasterUserId = user.TwitchId,ModeratorUserId=user.TwitchId };
+                var messagesCondition = new ChatMessageCondition{ BroadCasterUserId = user.TwitchId, UserId = bot.TwitchId };
 
-                var messagesCondition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "user_id", bot.TwitchId } };
 
-                await RegisterNewEvent("channel.follow",user,condition,"2");
+   
+                await RegisterNewEvent("channel.follow",user, followCondition, "2");
 
                 await RegisterNewEvent("channel.chat.message", user, messagesCondition, "1",bot.TwitchId);
 
@@ -189,7 +191,7 @@ namespace BotServer.TwitchBotClient
             {
                 if (badgesurl.TryGetValue(setId.ToLowerInvariant(), out var url))
                 {
-                    res.Add(badgesurl[url]);
+                    res.Add(url);
                 }
 
             }
@@ -309,6 +311,48 @@ namespace BotServer.TwitchBotClient
 
         }
 
+        //Commands Handlers
+        private async Task HandleJoinCommand(string username, string channel, string userId, string messageID, IServiceScope scope)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ChannelsService>();
+            var exists = await db.FindChannel(username);
+            if (exists == null)
+            {
+
+                var cnd = new List<string> { "local", "remote" };
+                var con = cnd[0];
+                var urlOBS = $"http://localhost:8000/chat/{username}";
+                var urlAuth = $"http://localhost:8000/connect";
+
+
+                try
+                {
+                    await _api.GetCustomBadges(userId, channel);
+
+                    await _client.JoinChannelAsync(username);
+                    await db.AddChannel(username);
+
+
+                    if (con == "remote")
+                    {
+                        urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
+                        urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                    }
+
+                    await _client.SendReplyAsync(channel, messageID, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+                }
+                catch (Exception a)
+                {
+
+                    Console.WriteLine(a);
+                }
+
+            }
+            else
+            {
+                await _client.SendReplyAsync(channel, messageID, "Ya estoy unido a tu canal");
+            }
+        }
         private async Task HandleCounterCommand(string channel, string username, string counterStatus)
         {
             if (username.ToLower().Equals(channel.ToLower()))
@@ -365,49 +409,6 @@ namespace BotServer.TwitchBotClient
 
         }
 
-
-        //Commands Handlers
-        private async Task HandleJoinCommand(string username, string channel, string userId, string messageID, IServiceScope scope)
-        {
-            var db = scope.ServiceProvider.GetRequiredService<ChannelsService>();
-            var exists = await db.FindChannel(username);
-            if (exists == null)
-            {
-
-                var cnd = new List<string> { "local", "remote" };
-                var con = cnd[0];
-                var urlOBS = $"http://localhost:8000/chat/{username}";
-                var urlAuth = $"http://localhost:8000/connect";
-
-
-                try
-                {
-                    await _api.GetCustomBadges(userId, channel);
-
-                    await _client.JoinChannelAsync(username);
-                    await db.AddChannel(username);
-
-
-                    if (con == "remote")
-                    {
-                        urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
-                        urlAuth = $"https://botserver-qccm.onrender.com/connect";
-                    }
-
-                    await _client.SendReplyAsync(channel, messageID, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
-                }
-                catch (Exception a)
-                {
-
-                    Console.WriteLine(a);
-                }
-
-            }
-            else
-            {
-                await _client.SendReplyAsync(channel, messageID, "Ya estoy unido a tu canal");
-            }
-        }
         internal async Task onUserJoined(object? sender, OnUserJoinedArgs e)
         {
             using var scope = _scope.CreateScope();
