@@ -15,7 +15,7 @@ namespace BotServer
         {
             var path = AppContext.BaseDirectory;
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[0];
+            var con = cnd[1];
             var dbPath = string.Empty;
 
             if (con == "local")
@@ -28,7 +28,7 @@ namespace BotServer
             }
 
             //TODO : Quitar antes de despliegue a produccion
-            dbPath = Path.Combine(path, "twitch.db");
+            //dbPath = Path.Combine(path, "twitch.db");
 
             var builder = WebApplication.CreateBuilder(args);
 
