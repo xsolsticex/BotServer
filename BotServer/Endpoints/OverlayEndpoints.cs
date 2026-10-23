@@ -7,14 +7,14 @@ namespace BotServer.Endpoints
     {
         public static IEndpointRouteBuilder MapOverlayEndpoints(this IEndpointRouteBuilder app)
         {
-            app.MapGet("/notifier/{username}", (string username) => { return Results.File("logro.html", "text/html"); });
+            app.MapGet("/notifier/{username}", (string username, IWebHostEnvironment env) => { return Results.File(Path.Combine(env.WebRootPath,"pages","logro.html"), "text/html"); });
 
 
-            app.MapGet("/status/{username}", (string username) => { return Results.File("followers.html", "text/html"); });
+            app.MapGet("/status/{username}", (string username, IWebHostEnvironment env) => { return Results.File(Path.Combine(env.WebRootPath, "pages", "followers.html"), "text/html"); });
 
-            app.MapGet("/chat/{username}", (string username) => { return Results.File("index.html", "text/html"); });
+            app.MapGet("/chat/{username}", (string username, IWebHostEnvironment env) => { return Results.File(Path.Combine(env.WebRootPath, "pages", "index.html"), "text/html"); });
 
-            app.MapGet("/counter/{username}", (string username) => { return Results.File("counter.html", "text/html"); });
+            app.MapGet("/counter/{username}", (string username, IWebHostEnvironment env) => { return Results.File(Path.Combine(env.WebRootPath, "pages", "counter.html"), "text/html"); });
 
 
             app.MapGet("/data/{username}", async (string username, [FromKeyedServices] ChannelsService channelDb) =>

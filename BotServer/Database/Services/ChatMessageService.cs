@@ -5,11 +5,6 @@ namespace BotServer.Database.Services
 {
     public class ChatMessageService
     {
-        public ChatMessageService() { 
-        
-        
-        }
-
         public void ProcessMessage(ChatMessage msg)
         {
             var message = msg.Message;

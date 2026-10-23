@@ -14,7 +14,7 @@ namespace BotServer.Extensions
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddBotServices(this IServiceCollection services,string dbPath)
+        public static IServiceCollection AddBotServices(this IServiceCollection services, string dbPath)
         {
 
             services.AddSignalR(options =>
@@ -27,7 +27,6 @@ namespace BotServer.Extensions
             services.AddSingleton<TwitchBot>();
             services.AddHostedService<TwitchBot>(sp => sp.GetRequiredService<TwitchBot>());
             services.AddSingleton<BotEventHandler>();
-            services.AddSingleton<MessageSender>();
             services.AddDbContext<TwitchDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
             services.AddScoped<TwitchClientFactory>();
             services.AddSingleton<TwitchAPI>(new TwitchAPI());
@@ -59,7 +58,8 @@ namespace BotServer.Extensions
             services.AddSingleton<SpotyClient>();
 
 
-            services.AddTwitchLibEventSubWebhooks(config => {
+            services.AddTwitchLibEventSubWebhooks(config =>
+            {
                 config.CallbackPath = "/eventSub";
                 config.Secret = Environment.GetEnvironmentVariable("HOOK_SECRET");
 

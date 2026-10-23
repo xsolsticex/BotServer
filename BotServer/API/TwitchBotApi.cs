@@ -468,7 +468,7 @@ namespace BotServer.API
         {
 
             var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
+            var con = cnd[0];
             if (con == "local")
             {
                 redirectUri = "http://localhost:8000/confirm";

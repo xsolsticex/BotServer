@@ -12,7 +12,7 @@ namespace BotServer.Endpoints
 
                 var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = cnd[1];
+                var cnt = cnd[0];
 
                 var redirect = "http://localhost:8000/confirm";
 
