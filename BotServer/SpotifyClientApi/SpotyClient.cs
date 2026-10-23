@@ -11,7 +11,7 @@ namespace BotServer.SpotifyClientApi
         
         public SpotyClient()
         {
-            client = new SpotifyClient("BQDUGYv5QG2tZrrjdgDdxS-yxQbnQysCiNjAfvJJfdtHtQulJDQBZSoUuIBbpRvhZYT6yvJf2IEV6h1G-UeVE02a3TcYCL1DCIyP7bElxGHHqmiRJ2RbziuL5_kt405mBhiZmhd6U5f5t1E0fzwLACNRh9Jic-Ubv6vepY4EH0ntLWrA3WdJkL6HNVzY9QnGBPz21w2TEpqhCBvfA-KCf0C-HaLP1Xvph4kKRtm1li_CHX9rGccsjg01JZwbTHchC5c0swsMRFCG2zSRbgpKxoMIIA6jGZMobZ0vuc-1gwwpq76g3lgeOZK-o_26TO_G2o6hw24ZpETtEGqmMCBAp4kqCMIXa6Q");
+            client = new SpotifyClient("");
 
 
 

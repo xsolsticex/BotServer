@@ -1,5 +1,7 @@
 ﻿using BotServer.API;
+using BotServer.Database.Models;
 using BotServer.Database.Services;
+using BotServer.Interfaces;
 using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
@@ -27,70 +29,79 @@ namespace BotServer.TwitchBotClient
         {
             _client = client;
 
-
-
         }
+
         public async Task OnConnected(object? sender, OnConnectedEventArgs e)
         {
             Console.WriteLine("Connected");
             await _api.GetChannelBadges();
 
+        }
 
 
+        private async Task RegisterNewEvent(string eventType, Users broadcaster, IEventSubCondition condition, string level, string bot = null)
+        {
+            var exists = false;
 
+            if (string.IsNullOrEmpty(bot))
+            {
+                exists = await _api.CheckEventSubs(eventType, broadcaster.TwitchId);
 
+            }
+            else
+            {
+                exists = await _api.CheckEventSubs(eventType, broadcaster.TwitchId,bot);
+            }
+
+            if (!exists)
+            {
+
+                await _api.RegisterEvent(eventType, level, condition);
+
+                var message = $"[EventSub] Evento {eventType} ya existe en {broadcaster.Username}";
+                ShowMessage(ConsoleColor.Yellow, message);
+            }
+            else
+            {
+                var message = $"[EventSub] Evento {eventType} con exito en {broadcaster.Username}";
+                ShowMessage(ConsoleColor.Green, message);
+            }
 
         }
 
+        private void ShowMessage(ConsoleColor color,string message)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
         public async Task OnChannelJoined(object? sender, OnJoinedChannelArgs e)
         {
 
             try
             {
-                //if (eventsInitialized == false)
-                //{
 
-                //    await _api.ClearAllEventSub();
-
-                //    eventsInitialized = true;
-                //}
                 var channel = e.Channel;
-                var service = _scope.CreateScope();
-                var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
-                var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
 
-                //var userToken = await tokensdb.GetAccessToken(channel);
+                //using var service = _scope.CreateScope();
+                //var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
+                //var tokensdb = service.ServiceProvider.GetRequiredService<TokensService>();
 
 
+                //Get broadcaster and bot ID
                 var user = await _api.GetUserData(channel);
-
-
                 var bot = await _api.GetUserData("xhipibotx");
 
-                var condition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId }, { "moderator_user_id", user.TwitchId } };
 
-                var exists = await _api.CheckEventSubs("channel.follow", user.TwitchId);
-
-                var messagesCondition = new Dictionary<string, string> { { "broadcaster_user_id", user.TwitchId },{ "user_id", bot.TwitchId } };
-                
-                if (!exists)
-                {
-                    await _api.RegisterEvent("channel.follow", "2", condition);
+                //Register follows and messages EventSubs
+                var followCondition = new FollowCondition {BroadCasterUserId = user.TwitchId,ModeratorUserId=user.TwitchId };
+                var messagesCondition = new ChatMessageCondition{ BroadCasterUserId = user.TwitchId, UserId = bot.TwitchId };
 
 
-                    Console.WriteLine("[EventSub] Evento channel.follow registrado correctamente.");
+   
+                await RegisterNewEvent("channel.follow",user, followCondition, "2");
 
-                }
-
-                exists = await _api.CheckEventSubs("channel.chat.message", user.TwitchId,bot.TwitchId);
-
-                if (!exists)
-                {
-                    await _api.RegisterEvent("channel.chat.message", "1", messagesCondition);
-
-                    Console.WriteLine("[EventSub] Evento channel.chat.message registrado correctamente.");
-
-                }
+                await RegisterNewEvent("channel.chat.message", user, messagesCondition, "1",bot.TwitchId);
 
                 await _api.GetCustomBadges(user.TwitchId, channel);
 
@@ -104,21 +115,9 @@ namespace BotServer.TwitchBotClient
 
         }
 
-        public async Task onMessageReceived(object? sender, OnMessageReceivedArgs e)
+        private static List<string> FormatBadges(IEnumerable<string> badges)
         {
-            var message = e.ChatMessage.Message;
-            var channel = e.ChatMessage.Channel;
-            var color = e.ChatMessage.HexColor;
-            var user = e.ChatMessage.Username;
-            var badges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
-
-            if (string.IsNullOrEmpty(color))
-            {
-                color = "#ffc107";
-            }
-
-
-            badges = badges.Select(element =>
+            return badges.Select(element =>
             {
 
                 if (element == "bot-badge")
@@ -145,65 +144,91 @@ namespace BotServer.TwitchBotClient
                     return element;
                 }
             }).ToList();
-            //badges.Add("subscriber");
-            //badges.Add("Final Fantasy Xiv Fan Festival 2026 Eu Content Unlock Quest Chat");
-            //badges.Add("Lego Batman Legacy Of The Dark Knight");
+
+
+
+        }
+
+
+        private async Task<string> GetProfile(string username, IServiceScope scope)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<UsersService>();
+            var usu = await db.GetUser(username);
+            string profile = string.Empty;
+
+            profile = usu == null ? await _api.GetUserProfile(username) : profile = usu.Profile;
+
+            return profile;
+        }
+
+        private async Task<List<string>> GetBadgesAsync(List<string> badges, string channel, IServiceScope scope)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<UsersService>();
+            var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
+            var custombadgeDb = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
+
+            //Obtener las customs
+            var customBadges = await custombadgeDb.GetUrlCustomBadges(badges, channel);
+
+
+            //Obtiene las globales
+            var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
+
+
+            if (customBadges != null)
+            {
+                foreach (var (setId, url) in customBadges)
+                {
+                    badgesurl[setId.ToLower()] = url;
+                }
+
+            }
+
+
+            List<string> res = new();
+
+            foreach (var setId in badges)
+            {
+                if (badgesurl.TryGetValue(setId.ToLowerInvariant(), out var url))
+                {
+                    res.Add(url);
+                }
+
+            }
+
+            return res;
+        }
+
+        public async Task onMessageReceived(object? sender, OnMessageReceivedArgs e)
+        {
+            var message = e.ChatMessage.Message;
+            var channel = e.ChatMessage.Channel;
+            var color = e.ChatMessage.HexColor;
+            var user = e.ChatMessage.Username;
+            var badges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
+            using var scope = _scope.CreateScope();
 
             try
             {
                 if (message.StartsWith("!")) return;
-                //if (message.StartsWith("!join") || message.StartsWith("!win") || message.StartsWith("!lose") || message.StartsWith("!nowin") || message.StartsWith("!counter") || message.StartsWith("!chat") || message.StartsWith("!nolose") || message.StartsWith("!reset")) return;
-                //Pendiende de añadir perfil de usuario
 
-                var scope = _scope.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<UsersService>();
-                var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
-                var custombadgeDb = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
+                color = string.IsNullOrEmpty(color) ? "#ffc107" : color;
+
+                badges = FormatBadges(badges);
 
 
-                //Obtener las customs
-                var customBadges = await custombadgeDb.GetUrlCustomBadges(badges, channel);
+                List<string> res = await GetBadgesAsync(badges, channel, scope);
 
+                string profile = await GetProfile(user, scope);
 
-                //Obtiene las globales
-                var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
-
-
-                if (customBadges != null)
+                Dictionary<string, object> data = new Dictionary<string, object>
                 {
-                    foreach (var (setId, url) in customBadges)
-                    {
-                        badgesurl[setId.ToLower()] = url;
-                    }
-
-                }
-
-
-                List<string> res = new();
-                foreach (var setId in badges)
-                {
-
-                    res.Add(badgesurl[setId.ToLower()]);
-                }
-
-                var usu = await db.GetUser(user);
-                string profile = string.Empty;
-                if (usu == null)
-                {
-                    profile = await _api.GetUserProfile(user);
-                }
-                else
-                {
-                    profile = usu.Profile;
-                }
-
-                var data = new Dictionary<string, object>();
-                data.Add("username", user);
-                data.Add("content", message);
-                data.Add("color", color);
-                data.Add("profile", profile);
-                data.Add("badges", res);
-
+                    ["username"] = user,
+                    ["content"] = message,
+                    ["color"] = color,
+                    ["profile"] = profile,
+                    ["badges"] = res
+                };
 
                 await _signalR.Send(channel, data);
             }
@@ -216,8 +241,6 @@ namespace BotServer.TwitchBotClient
 
         }
 
-
-
         internal async Task onCommandReceived(object? sender, OnChatCommandReceivedArgs e)
         {
             var command = e.Command.Name;
@@ -225,93 +248,28 @@ namespace BotServer.TwitchBotClient
             var username = e.ChatMessage.Username;
             var user = e.ChatMessage.UserId;
             var messageID = e.ChatMessage.Id.ToString();
-            
+
+            using var scope = _scope.CreateScope();
+
+
 
             switch (command)
             {
                 case "hora":
-                    TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
-                    var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
-                    var timeToString = time.ToString();
 
-                    var us = await _api.GetUserData(channel);
-                    var bot = await _api.GetUserData("xhipibotx");
-                    var token = await _api.GetAppToken();
+                    await HandleTimeCommand(channel);
 
-                    await _api.SendChatMessage(us.TwitchId, bot.TwitchId, timeToString,token);
-                    //await _client.SendMessageAsync(channel, timeToString);
                     break;
-
-                //case "asco":
-                //	TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
-                //	var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
-                //	var timeToString = time.ToString();
-                //	await _client.SendMessageAsync(channel, timeToString);
-                //	break;
-
 
                 case "color":
-                    //Cambiar color chat
-                    var color = e.Command.ArgumentsAsList[0];
-                    if (!string.IsNullOrEmpty(color))
-                    {
-                        if (!color.StartsWith('#'))
-                        {
-                            color = "#" + color;
-                        }
-             
-                        await _signalR.ChangeColor(channel, color);
-                    }
 
+                    await HandleColorCommand(channel, messageID, e.Command.ArgumentsAsList);
 
                     break;
+
                 case "join":
 
-
-                    var service = _scope.CreateScope();
-                    var db = service.ServiceProvider.GetRequiredService<ChannelsService>();
-                    var exists = await db.FindChannel(username);
-
-                    if (exists == null)
-                    {
-
-                        var cnd = new List<string> { "local", "remote" };
-                        var con = cnd[1];
-                        var urlOBS = $"http://localhost:8000/chat/{username}";
-                        var urlAuth = $"http://localhost:8000/connect";
-
-
-                        try
-                        {
-                            await _api.GetCustomBadges(user, channel);
-
-                            await _client.JoinChannelAsync(username);
-                            await db.AddChannel(username);
-
-
-                            if (con == "remote")
-                            {
-                                urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
-                                urlAuth = $"https://botserver-qccm.onrender.com/connect";
-                            }
-                        }
-                        catch (Exception a)
-                        {
-
-                            Console.WriteLine(a);
-                        }
-
-
-                        //await _client.SendReplyAsync(channel, e.ChatMessage.Id.ToString(), $"Añade a tu OBS la fuente como navegador: {urlOBS}");
-
-                        await _client.SendReplyAsync(channel, messageID, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
-
-
-                    }
-                    else
-                    {
-                        await _client.SendReplyAsync(channel, messageID, "Ya estoy unido a tu canal");
-                    }
+                    await HandleJoinCommand(username, channel, user, messageID, scope);
 
                     break;
 
@@ -332,10 +290,8 @@ namespace BotServer.TwitchBotClient
                     break;
 
                 case "win":
-                    if (username.ToLower().Equals(channel.ToLower()))
-                    {
-                        await _signalR.UpdateCounter(channel, "win");
-                    }
+
+                    await HandleCounterCommand(channel, username, "win");
 
                     break;
 
@@ -343,25 +299,119 @@ namespace BotServer.TwitchBotClient
                     await _client.SendReplyAsync(channel, messageID, $"Comandos: Test: !hora, Unir a canal: !join, Url contador: !counter, Url estado: !status, Url chat: !chat, Comandos contador: !win, !lose, !reset");
                     break;
 
-                //case "sub":
-                //    await _signalR.UpdateFollowers(channel, new Dictionary<string, int> { {"followers",50 },{"subs",20 } });
-                //    break;
-
                 case "lose":
-                    await _signalR.UpdateCounter(channel, "lose");
+                    await HandleCounterCommand(channel, username, "lose");
                     break;
 
                 case "reset":
-                    await _signalR.UpdateCounter(channel, "reset");
+                    await HandleCounterCommand(channel, username, "reset");
                     break;
             }
 
-            Console.WriteLine(command);
+
+        }
+
+        //Commands Handlers
+        private async Task HandleJoinCommand(string username, string channel, string userId, string messageID, IServiceScope scope)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ChannelsService>();
+            var exists = await db.FindChannel(username);
+            if (exists == null)
+            {
+
+                var cnd = new List<string> { "local", "remote" };
+                var con = cnd[1];
+                var urlOBS = $"http://localhost:8000/chat/{username}";
+                var urlAuth = $"http://localhost:8000/connect";
+
+
+                try
+                {
+                    await _api.GetCustomBadges(userId, channel);
+
+                    await _client.JoinChannelAsync(username);
+                    await db.AddChannel(username);
+
+
+                    if (con == "remote")
+                    {
+                        urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
+                        urlAuth = $"https://botserver-qccm.onrender.com/connect";
+                    }
+
+                    await _client.SendReplyAsync(channel, messageID, $"Para dar permisos usa el siguiente enlace: {urlAuth}");
+                }
+                catch (Exception a)
+                {
+
+                    Console.WriteLine(a);
+                }
+
+            }
+            else
+            {
+                await _client.SendReplyAsync(channel, messageID, "Ya estoy unido a tu canal");
+            }
+        }
+        private async Task HandleCounterCommand(string channel, string username, string counterStatus)
+        {
+            if (username.ToLower().Equals(channel.ToLower()))
+            {
+                await _signalR.UpdateCounter(channel, counterStatus);
+            }
+        }
+
+        private async Task HandleTimeCommand(string channel)
+        {
+            var broadcaster = await _api.GetUserData(channel);
+            var bot = await _api.GetUserData("xhipibotx");
+            var token = await _api.GetAppToken();
+
+            TimeZoneInfo zona = TimeZoneInfo.FindSystemTimeZoneById("Romance Standard Time");
+            var time = TimeZoneInfo.ConvertTime(DateTime.UtcNow, zona);
+            var timeToString = time.ToString();
+
+            await _api.SendChatMessage(broadcaster.TwitchId, bot.TwitchId, timeToString, token);
+        }
+
+        private async Task HandleColorCommand(string channel, string messageId, List<string> argumentsAsList)
+        {
+
+            try
+            {
+                if ((argumentsAsList.Count > 0) && (string.IsNullOrWhiteSpace(argumentsAsList[0])))
+                {
+                    var color = argumentsAsList[0];
+
+                    if (!color.StartsWith('#'))
+                    {
+                        color = "#" + color;
+                    }
+
+                    await _signalR.ChangeColor(channel, color);
+                    return;
+                }
+
+                var broadcaster = await _api.GetUserData(channel);
+                var bot = await _api.GetUserData("xhipibotx");
+                var token = await _api.GetAppToken();
+                await _api.ReplyChatMessage(broadcaster.TwitchId, bot.TwitchId, "Debes pasar un color en formato Hexadecimal como parametro", token, messageId);
+
+
+
+            }
+            catch (Exception a)
+            {
+
+                Console.WriteLine(a);
+            }
+
+
         }
 
         internal async Task onUserJoined(object? sender, OnUserJoinedArgs e)
         {
-            var scope = _scope.CreateScope();
+            using var scope = _scope.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<UsersService>();
             var usu = e.Username;
             var exists = await db.GetUser(usu);
@@ -377,15 +427,10 @@ namespace BotServer.TwitchBotClient
 
         }
 
-        internal async Task SubsHandler(object? sender, EventArgs e)
-        {
-
-        }
-
         internal async Task newSub(object? sender, OnNewSubscriberArgs e)
         {
 
-            var scope = _scope.CreateScope();
+            using var scope = _scope.CreateScope();
             var usersDb = scope.ServiceProvider.GetRequiredService<UsersService>();
             var db = scope.ServiceProvider.GetRequiredService<ChannelsService>();
 
@@ -398,7 +443,7 @@ namespace BotServer.TwitchBotClient
             if (channelData != null && user != null)
             {
                 var followers = await _api.GetFollowers(user.Username, user.UserId);
-                var subs = await _api.GetFollowers(user.Username, user.UserId);
+                var subs = await _api.GetSubs(user.Username, user.UserId);
 
                 await db.UpdateChannel(channel, followers, subs);
                 await _signalR.UpdateFollowers(channel, new Dictionary<string, int> { { "followers", followers }, { "subs", subs } });

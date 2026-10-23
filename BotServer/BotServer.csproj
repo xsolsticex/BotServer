@@ -26,49 +26,49 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\achievement.mp3">
+    <Content Update="wwwroot\sounds\achievement.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\Avengers.ttf">
+    <Content Update="wwwroot\fonts\Avengers.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\chat.js">
+    <Content Update="wwwroot\scripts\chat.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\counter.css">
+    <Content Update="wwwroot\styles\counter.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\counter.html">
+    <Content Update="wwwroot\pages\counter.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\counter.js">
+    <Content Update="wwwroot\scripts\counter.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\followers.css">
+    <Content Update="wwwroot\styles\followers.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\followers.html">
+    <Content Update="wwwroot\pages\followers.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\followers.js">
+    <Content Update="wwwroot\scripts\followers.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\fonts\Decaydence.otf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\imperio-red.png">
+    <Content Update="wwwroot\images\imperio-red.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\imperio.png">
+    <Content Update="wwwroot\images\imperio.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\index.css">
+    <Content Update="wwwroot\styles\index.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\index.html">
+    <Content Update="wwwroot\pages\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\index.js">
+    <Content Update="wwwroot\scripts\index.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\lib\microsoft-signalr\signalr.js">
@@ -77,16 +77,16 @@
     <Content Update="wwwroot\lib\microsoft-signalr\signalr.min.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\logro.css">
+    <Content Update="wwwroot\styles\logro.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\logro.html">
+    <Content Update="wwwroot\pages\logro.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\logro.js">
+    <Content Update="wwwroot\scripts\logro.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\MRC.png">
+    <Content Update="wwwroot\images\MRC.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
