@@ -1,6 +1,9 @@
 const usuario = window.location.pathname.split("/").pop();
 const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
 
+
+let conectando = false;
+
 async function JoinChannel() {
     while (connection.state === signalR.HubConnectionState.Connected) {
         try {
