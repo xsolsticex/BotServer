@@ -7,6 +7,33 @@ const logroContent = document.getElementById("logroContent");
 const sound = new Audio("https://botserver-qccm.onrender.com/sounds/achievement.mp3");
 const usuario = window.location.pathname.split("/").pop();
 
+
+
+async function JoinChannel() {
+    while (connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            await connection.invoke("Join", usuario);
+
+            console.log("Unido al canal:", usuario);
+            return;
+        } catch (error) {
+            console.error("Error al unirse:", error);
+            await sleep(3000);
+        }
+    }
+}
+
+connection.onreconnecting(error => {
+    console.warn("SignalR reconectando:", error);
+});
+
+connection.onreconnected(async connectionId => {
+    console.log("SignalR reconectado:", connectionId);
+
+    await JoinChannel();
+});
+
+
 console.log(usuario);
 
 //Listener del cliente
@@ -85,31 +112,27 @@ function closeMessage() {
 
 //Conexion al socket SignalR
 async function Connect() {
-    while (connection.state === signalR.HubConnectionState.Disconnected) {
-        try {
-            await connection.start();
-            console.log("Conectado");
-            break;
-        } catch (error) {
-            console.error("Error:", error);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-    }
+    if (conectando) return;
 
-    if (connection.state === signalR.HubConnectionState.Connected) {
-        while (connection.state === signalR.HubConnectionState.Connected) {
+    conectando = true;
+
+    try {
+        while (connection.state === signalR.HubConnectionState.Disconnected) {
             try {
-                await connection.invoke("Join", usuario);
-                console.log("Join enviado");
-                break;
+                await connection.start();
+
+                console.log("SignalR conectado");
+
+                await JoinChannel();
+                return;
             } catch (error) {
-                console.error("Error Join:", error);
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                console.error("Error de conexión:", error);
+                await sleep(3000);
             }
         }
+    } finally {
+        conectando = false;
     }
-
-
 }
 
 

@@ -5,6 +5,20 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAu
 
 
 
+async function JoinChannel() {
+    while (connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            await connection.invoke("Join", usuario);
+
+            console.log("Unido al canal:", usuario);
+            return;
+        } catch (error) {
+            console.error("Error al unirse:", error);
+            await sleep(3000);
+        }
+    }
+}
+
 //Listener del cliente
 connection.on("botMessage", message => {
     createMessage(message);
@@ -21,16 +35,18 @@ connection.on("ColorChanged", message => {
         document.documentElement.style.setProperty("--border-message", "#66b2ff");
     }
 
-    //createMessage(message);
+
 });
 
 
 connection.onreconnecting(error => {
-    console.log("Reconectando...", error);
+    console.warn("SignalR reconectando:", error);
 });
 
-connection.onreconnected(connectionId => {
-    console.log("Reconectado:", connectionId);
+connection.onreconnected(async connectionId => {
+    console.log("SignalR reconectado:", connectionId);
+
+    await JoinChannel();
 });
 
 connection.onclose(error => {
@@ -43,32 +59,29 @@ connection.onclose(error => {
 
 //Conexion al socket SignalR
 async function Connect() {
-    while (connection.state === signalR.HubConnectionState.Disconnected) {
-        try {
-            await connection.start();
-            console.log("Conectado");
-            break;
-        } catch (error) {
-            console.error("Error:", error);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-    }
+    if (conectando) return;
 
-    if (connection.state === signalR.HubConnectionState.Connected) {
-        while (connection.state === signalR.HubConnectionState.Connected) {
+    conectando = true;
+
+    try {
+        while (connection.state === signalR.HubConnectionState.Disconnected) {
             try {
-                await connection.invoke("Join", usuario);
-                console.log("Join enviado");
-                break;
+                await connection.start();
+
+                console.log("SignalR conectado");
+
+                await JoinChannel();
+                return;
             } catch (error) {
-                console.error("Error Join:", error);
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                console.error("Error de conexión:", error);
+                await sleep(3000);
             }
         }
+    } finally {
+        conectando = false;
     }
-
-
 }
+
 
 
 
