@@ -28,7 +28,7 @@ namespace BotServer
             }
 
             //TODO : Quitar antes de despliegue a produccion
-            //dbPath = Path.Combine(path, "twitch.db");
+            dbPath = Path.Combine(path, "twitch.db");
 
             var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +49,7 @@ namespace BotServer
             app.MapOAuthEndpoints();
             app.MapOverlayEndpoints();
             app.MapSpotifyEndpoints();
-  
+
             app.MapHub<ChatHub>("/chatHub");
 
             app.Run();
