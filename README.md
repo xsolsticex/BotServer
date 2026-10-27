@@ -58,7 +58,7 @@ BotServer/
 ## Requisitos previos
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- [Docker](https://www.docker.com/) (opcional)
+- [Docker](https://www.docker.com/)
 - Git
 - Cuenta de Twitch
 - Credenciales de Spotify (si vas a usar la integración)
@@ -96,8 +96,6 @@ El proyecto usa `appsettings.json` y variables de entorno para su configuración
 | `REDIRECT_URL` | URL de redirección usada en OAuth |
 | `ASPNETCORE_URLS` | Dirección y puerto del servidor |
 | `ConnectionStrings` o configuración equivalente | Base de datos y credenciales del entorno |
-
-> Importante: nunca subas tokens, client secrets ni credenciales reales a GitHub.
 
 ## Ejecución con Docker
 
