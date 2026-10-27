@@ -1,145 +1,218 @@
-# 🤖 BotServer
+# BotServer
 
-Servidor backend para bots, construido con **.NET 10 / ASP.NET Core**, con persistencia en **SQLite** y listo para desplegarse con **Docker**.
+BotServer es un backend para bots y overlays de Twitch, desarrollado con .NET 10 y ASP.NET Core. El proyecto combina integración con Twitch, Spotify, SignalR y SQLite para ofrecer una base sólida para servicios de chat, autenticación OAuth, dashboards, overlays y automatizaciones durante transmisiones en vivo.
 
----
+## Características
 
-## 📋 Tabla de contenidos
+- Servidor web con ASP.NET Core
+- Integración con Twitch mediante TwitchLib
+- Soporte para comandos, eventos y automatizaciones del bot
+- Autenticación OAuth para usuarios y canales de Twitch
+- Integración con Spotify para autenticación y consumo de datos
+- Comunicación en tiempo real con SignalR
+- Persistencia de datos con SQLite
+- Endpoints para overlays y paneles web
+- Preparado para ejecutarse con Docker
 
-- [Características](#-características)
-- [Tecnologías](#-tecnologías)
-- [Requisitos previos](#-requisitos-previos)
-- [Estructura del proyecto](#-estructura-del-proyecto)
-- [Instalación y ejecución local](#-instalación-y-ejecución-local)
-- [Ejecución con Docker](#-ejecución-con-docker)
-- [Configuración](#-configuración)
-- [Uso](#-uso)
-- [Despliegue](#-despliegue)
-- [Contribuir](#-contribuir)
-- [Licencia](#-licencia)
-
----
-
-## ✨ Características
-
-- API/servidor web basado en ASP.NET Core
-- Almacenamiento local con SQLite
-- Imagen Docker con build multi-etapa (SDK para compilar, runtime ligero para ejecutar)
-- TODO: describe aquí las funcionalidades del bot (comandos, integraciones, webhooks, etc.)
-
-## 🛠 Tecnologías
+## Tecnologías
 
 | Componente | Tecnología |
 |---|---|
-| Lenguaje / Framework | C# · .NET 10 · ASP.NET Core |
+| Lenguaje | C# |
+| Framework | .NET 10 / ASP.NET Core |
 | Base de datos | SQLite |
+| Comunicación en tiempo real | SignalR |
+| Integraciones | Twitch API, Spotify API |
 | Contenedores | Docker |
 | Solución | `BotServer.slnx` |
 
-## ✅ Requisitos previos
+## Estructura del proyecto
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/download) (para ejecutar en local)
-- [Docker](https://www.docker.com/) (opcional, para ejecutar en contenedor)
-- Git
-
-## 📁 Estructura del proyecto
-
-```
+```text
 BotServer/
-├── BotServer/          # Proyecto principal (código fuente)
-├── BotServer.slnx      # Archivo de solución
-├── Dockerfile          # Imagen Docker multi-etapa
+├── BotServer/                # Proyecto principal
+│   ├── API/                  # Lógica de API y servicios relacionados
+│   ├── Commands/             # Comandos del bot
+│   ├── Database/             # Contexto EF Core, servicios y migraciones
+│   ├── Endpoints/            # Endpoints HTTP del servidor
+│   ├── Extensions/           # Extensiones para configuración
+│   ├── Hubs/                 # Hub de SignalR
+│   ├── Interfaces/           # Interfaces del proyecto
+│   ├── Migrations/           # Migraciones de base de datos
+│   ├── Properties/          # Configuración del proyecto
+│   ├── SpotifyClientApi/     # Cliente y utilidades de Spotify
+│   ├── TwitchBotClient/     # Cliente y handlers del bot de Twitch
+│   ├── wwwroot/              # Archivos estáticos y overlays
+│   ├── Program.cs            # Punto de entrada de la aplicación
+│   ├── appsettings.json     # Configuración principal
+│   ├── appsettings.Development.json
+│   ├── BotServer.csproj     # Proyecto .NET
+│   └── libman.json          # Gestión de librerías cliente
+├── BotServer.slnx           # Solución
+├── Dockerfile               # Imagen Docker
+├── .gitignore
 ├── .gitattributes
-└── .gitignore
+└── README.md
 ```
 
-## 🚀 Instalación y ejecución local
+## Requisitos previos
+
+- [.NET SDK 10](https://dotnet.microsoft.com/download)
+- [Docker](https://www.docker.com/) (opcional)
+- Git
+- Cuenta de Twitch
+- Credenciales de Spotify (si vas a usar la integración)
+
+## Instalación
+
+1. Clona el repositorio:
 
 ```bash
-# 1. Clonar el repositorio
 git clone https://github.com/xsolsticex/BotServer.git
 cd BotServer
+```
 
-# 2. Restaurar dependencias
+2. Restaura dependencias:
+
+```bash
 cd BotServer
 dotnet restore
+```
 
-# 3. Ejecutar
+3. Ejecuta la aplicación:
+
+```bash
 dotnet run
 ```
 
-## 🐳 Ejecución con Docker
+## Configuración
 
-El `Dockerfile` compila el proyecto con la imagen del SDK de .NET 10 y ejecuta el resultado sobre la imagen `aspnet:10.0`, con `sqlite3` instalado. El servidor escucha en el puerto **10000**.
+El proyecto usa `appsettings.json` y variables de entorno para su configuración. Algunos valores importantes que se usan en código incluyen:
+
+| Variable | Descripción |
+|---|---|
+| `MAIN_CHANNEL` | Canal principal de Twitch del bot |
+| `CLIENT_ID` | Client ID de Twitch para autenticación OAuth |
+| `REDIRECT_URL` | URL de redirección usada en OAuth |
+| `ASPNETCORE_URLS` | Dirección y puerto del servidor |
+| `ConnectionStrings` o configuración equivalente | Base de datos y credenciales del entorno |
+
+> Importante: nunca subas tokens, client secrets ni credenciales reales a GitHub.
+
+## Ejecución con Docker
+
+El proyecto incluye un `Dockerfile` para compilar y ejecutar la aplicación en un contenedor.
+
+### Construir la imagen
 
 ```bash
-# Construir la imagen
 docker build -t botserver .
+```
 
-# Ejecutar el contenedor
+### Ejecutar el contenedor
+
+```bash
 docker run -d --name botserver -p 10000:10000 botserver
 ```
 
-Si quieres que la base de datos SQLite persista entre reinicios, monta un volumen:
+La aplicación está diseñada para escuchar en el puerto `10000` por defecto.
 
-```bash
-docker run -d --name botserver \
-  -p 10000:10000 \
-  -v botserver-data:/app \
-  botserver
-```
+## Endpoints principales
 
-> TODO: ajusta la ruta del volumen a la carpeta donde tu aplicación guarda el archivo `.db`.
+La aplicación expone varios endpoints para autenticación, overlays y datos del bot.
 
-## ⚙️ Configuración
+### OAuth de Twitch
 
-| Variable | Descripción | Valor por defecto |
-|---|---|---|
-| `ASPNETCORE_URLS` | URL y puerto en los que escucha el servidor | `http://+:10000` |
-| TODO | Token del bot / API key | — |
-| TODO | Cadena de conexión SQLite | — |
+- `/connect`
+- `/confirm`
 
-Puedes configurar la aplicación mediante `appsettings.json`, variables de entorno o *user secrets*.
+Estos endpoints permiten iniciar y completar el flujo OAuth de Twitch para autorizar al bot o a usuarios.
 
-> ⚠️ **Nunca** subas tokens, claves o credenciales al repositorio.
+### Overlays
 
-## 💡 Uso
+- `/notifier/{username}`
+- `/status/{username}`
+- `/chat/{username}`
+- `/counter/{username}`
 
-Una vez en marcha, el servidor está disponible en:
+Estos endpoints devuelven páginas HTML para overlays y widgets visuales.
 
-```
+### Datos de canal
+
+- `/data/{username}`
+
+Devuelve datos del canal, como seguidores y suscriptores.
+
+### Perfil
+
+- `/profile/{username}`
+
+Devuelve la información del perfil del usuario.
+
+### Spotify
+
+- `/auth/spotify/{username}`
+
+Endpoint para completar la autenticación con Spotify para un usuario concreto.
+
+## Integraciones
+
+### Twitch
+El proyecto incluye soporte para:
+
+- Conexión del bot a canales de Twitch
+- Eventos de chat
+- Mensajes y comandos
+- Registro de seguidores/suscriptores
+- Integración con SignalR para notificaciones en vivo
+
+### Spotify
+Se integra con la API de Spotify para autenticación y uso de datos del usuario.
+
+### SignalR
+Permite enviar eventos y mensajes en tiempo real desde el backend hacia clientes web o overlays.
+
+## Uso
+
+Una vez levantado el servidor, puedes abrir la aplicación en:
+
+```text
 http://localhost:10000
 ```
 
-TODO: documenta aquí los endpoints principales, por ejemplo:
+También puedes acceder a las rutas de overlay según la necesidad del proyecto, por ejemplo:
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/` | Estado del servidor |
-| `POST` | `/webhook` | Recepción de eventos del bot |
+```text
+http://localhost:10000/chat/tuusuario
+http://localhost:10000/counter/tuusuario
+http://localhost:10000/status/tuusuario
+```
 
-## ☁️ Despliegue
+## Despliegue
 
-El proyecto está preparado para plataformas que ejecutan contenedores Docker (Render, Railway, Fly.io, un VPS, etc.). Solo necesitas:
+Este backend está preparado para desplegarse sobre plataformas compatibles con contenedores Docker, como:
 
-1. Apuntar la plataforma a este repositorio (usará el `Dockerfile`).
-2. Exponer el puerto `10000`.
-3. Definir las variables de entorno necesarias.
+- Render
+- Railway
+- Fly.io
+- VPS
+- Docker Swarm
+- Kubernetes
 
-## 🤝 Contribuir
+Requiere exponer el puerto `10000` y configurar correctamente las variables de entorno del entorno de producción.
 
-Las contribuciones son bienvenidas:
+## Contribuir
+
+Las contribuciones son bienvenidas. Para colaborar:
 
 1. Haz un fork del proyecto
-2. Crea una rama: `git checkout -b feature/mi-mejora`
-3. Haz commit de tus cambios: `git commit -m "Añade mi mejora"`
-4. Sube la rama: `git push origin feature/mi-mejora`
+2. Crea una rama nueva
+3. Realiza tus cambios
+4. Haz commit
 5. Abre un Pull Request
 
-## 📄 Licencia
-
-TODO: indica la licencia del proyecto (por ejemplo, MIT) y añade un archivo `LICENSE`.
-
----
-
-Hecho con ❤️ por [@xsolsticex](https://github.com/xsolsticex)
+```bash
+git checkout -b feature/nueva-funcionalidad
+git commit -am "Añade nueva funcionalidad"
+git push origin feature/nueva-funcionalidad
+```
