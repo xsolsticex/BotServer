@@ -1,4 +1,4 @@
-namespace BotServer
+namespace BotServer.Configuration
 {
     public static class AppEnvironment
     {

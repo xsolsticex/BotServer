@@ -1,3 +1,4 @@
+using BotServer.Configuration;
 using BotServer.Database;
 using BotServer.Endpoints;
 using BotServer.Extensions;

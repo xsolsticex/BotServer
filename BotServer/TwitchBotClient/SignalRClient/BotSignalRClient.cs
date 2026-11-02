@@ -1,3 +1,4 @@
+using BotServer.Configuration;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
