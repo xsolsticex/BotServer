@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 # Local Unit Tests folder
 Tests/
+/BotServer/PROJECT_ERROR_REPORT.md
