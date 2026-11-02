@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace BotServer.TwitchBotClient.SignalRClient
 {
-    public class BotSignalRClient
+    public class BotSignalRClient : IBotSignalRClient
     {
         HubConnection connection;
         private readonly ILogger<BotSignalRClient> _logger;
@@ -148,7 +148,7 @@ namespace BotServer.TwitchBotClient.SignalRClient
             }
         }
 
-        internal async Task ChangeColor(string channel, string color)
+        public async Task ChangeColor(string channel, string color)
         {
             await EnsureConnectedAsync();
 

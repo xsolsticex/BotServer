@@ -1,17 +1,15 @@
-﻿using SpotifyAPI.Web.Http;
+using SpotifyAPI.Web.Http;
 
-namespace BotServer.SpotifyClientApi
+namespace BotServer.API.Spotify
 {
     public class SpotyTokenManager
     {
-        private HttpClient _client;
+        private readonly HttpClient _client;
 
         public SpotyTokenManager(HttpClient client)
         {
             _client = client;
-
         }
-
 
         public async Task<string> GenerateUserToken(string auth_code)
         {
@@ -24,7 +22,6 @@ namespace BotServer.SpotifyClientApi
             };
 
             using var content = new FormUrlEncodedContent(param);
-
             var response = await _client.PostAsync(_client.BaseAddress, content);
 
             response.EnsureSuccessStatusCode();

@@ -1,7 +1,8 @@
 ﻿using BotServer.API;
+using BotServer.API.Spotify;
 using BotServer.Database;
 using BotServer.Database.Services;
-using BotServer.SpotifyClientApi;
+using BotServer.HostedServices;
 using BotServer.TwitchBotClient;
 using BotServer.TwitchBotClient.SignalRClient;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +34,7 @@ namespace BotServer.Extensions
             services.AddSingleton<TwitchAuthService>();
             services.AddSingleton<TwitchBotApi>();
             services.AddScoped<UsersService>();
-            services.AddSingleton<BotSignalRClient>();
+            services.AddSingleton<IBotSignalRClient, BotSignalRClient>();
             services.AddScoped<TokensService>();
             services.AddScoped<ChannelsService>();
             services.AddScoped<GlobalBadgesService>();

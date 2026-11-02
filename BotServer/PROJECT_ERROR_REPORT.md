@@ -1,39 +1,31 @@
 # Informe de Diagnóstico y Errores del Proyecto BotServer
 
-Este informe detalla el estado actual del proyecto .NET **BotServer** tras las correcciones aplicadas para resolver advertencias, errores potenciales y código obsoleto.
+Este informe detalla el estado actual del proyecto .NET **BotServer** tras las correcciones aplicadas para resolver errores, optimizar rendimiento y reestructurar la arquitectura.
 
 ---
 
-## 1. Resumen de Correcciones Realizadas ✅
+## 1. Resumen de Correcciones y Optimizaciones Recientes ✅
 
-### ✅ Uso de APIs Obsoletas de TwitchLib (Resuelto)
-* **Problema anterior:** Advertencias `CS0618` por el uso del método obsoleto `EventSub.GetEventSubSubscriptionsAsync(...)`.
-* **Solución aplicada:** Se actualizaron las llamadas en `API/TwitchBotApi.cs` (`CheckEventSubs` y `ClearAllEventSub`) para utilizar `GetEventSubSubscriptionsRequest` de acuerdo con las recomendaciones modernas de TwitchLib.
+### ✅ Error de Inyección de Dependencias en `TwitchBot` (Resuelto)
+* **Problema:** El constructor de `TwitchBot` solicitaba la clase concreta `BotSignalRClient`, pero el contenedor registrador utilizaba la interfaz `IBotSignalRClient`, provocando un fallo de resolución en tiempo de ejecución.
+* **Solución aplicada:** Se actualizó `TwitchBot` para inyectar `IBotSignalRClient` mediante su interfaz, alineándolo con el resto de servicios.
 
-### ✅ Código Muerto / Sin Usar (Resuelto)
-* **Problema anterior:** Advertencias `CS0169` por campos privados sin usar (`botCommands` y `_api`) en la clase `TwitchBot.cs`.
-* **Solución aplicada:** Se eliminaron dichos campos para mantener la limpieza y legibilidad del código.
+### ✅ Corrección de Bug en Comando `!color` (Resuelto)
+* **Problema:** Se utilizaba `string.IsNullOrWhiteSpace` en lugar de `!string.IsNullOrWhiteSpace`, lo que impedía procesar correctamente los parámetros de color hexadecimal en el chat.
+* **Solución aplicada:** Se corrigió la condición lógica a `!string.IsNullOrWhiteSpace(...)`.
 
-### ✅ Discordancia en Firmas de Interfaces (Resuelto)
-* **Problema anterior:** Advertencias `CS8767` debido a que la nulabilidad de los parámetros en `HoraCommand.ExecuteAsync` no coincidía con la interfaz `ITwitchCommand`.
-* **Solución aplicada:** Se ajustó la firma de `ExecuteAsync` en `HoraCommand.cs` para utilizar tipos anulables (`?` y valores por defecto) alineándose perfectamente con `ITwitchCommand`.
+### ✅ Eliminación de Deadlocks y Optimización Asíncrona (Resuelto)
+* **Problema:** Uso de `.Result` síncrono sobre llamadas asíncronas en métodos como `GetUser` en `TwitchBotApi.cs`.
+* **Solución aplicada:** Se refactorizó con `await` y se paralelizaron operaciones independientes usando `Task.WhenAll` en `BotEventHandler` y `TwitchBotApi`.
 
-### ✅ Asignación Redundante (Resuelto)
-* **Problema anterior:** Advertencia `CS1717` (*Asignación a la misma variable*) al llamar a `GetChannelChatBadgesAsync(broadcaster_id = broadcaster_id)` en `TwitchBotApi.cs`.
-* **Solución aplicada:** Se corrigió pasando directamente el parámetro `broadcaster_id`.
+### ✅ Reestructuración Arquitectónica y de Directorios (Resuelto)
+* **Integración de Spotify:** Se movieron `SpotyClient.cs` y `SpotyTokenManager.cs` desde la carpeta raíz `SpotifyClientApi/` hacia `API/Spotify/` con el namespace `BotServer.API.Spotify`.
+* **Servicios Hospedados:** Se trasladó `EventSubHostedService.cs` desde `Database/Services/` hacia `HostedServices/` (`BotServer.HostedServices`), separando los servicios en segundo plano de la capa de persistencia.
+* **Interfaces Globales:** Se reubicó `ITwitchCommand.cs` desde `Commands/Interface/` hacia la carpeta global `Interfaces/`.
 
 ---
 
 ## 2. Puntos Pendientes / Advertencias Menores (A Futuro)
-
-### ⚠️ Riesgo de `NullReferenceException` en Spotify (`SpotifyClientApi/SpotyClient.cs`)
-* **Código afectado:**
-  ```csharp
-  var first = result.Tracks.Items.FirstOrDefault();
-  var songid = first.Id;
-  PlayerResumePlaybackRequest req = new PlayerResumePlaybackRequest { Uris = new List<string> { first.Uri } };
-  ```
-* **Recomendación:** Añadir validación de nulidad para `first` en caso de que la búsqueda no arroje resultados.
 
 ### ⚠️ Advertencias de Nulabilidad en Entidades EF (`CS8618`)
 * **Descripción:** Propiedades string no anulables sin inicializar en modelos de Entity Framework (`Users`, `SpotifyToken`, `Puntos`, etc.).

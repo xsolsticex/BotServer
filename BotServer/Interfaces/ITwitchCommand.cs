@@ -1,4 +1,4 @@
-﻿namespace BotServer.Commands.Interface
+namespace BotServer.Interfaces
 {
     public interface ITwitchCommand
     {

@@ -1,24 +1,24 @@
-﻿using BotServer.TwitchBotClient.SignalRClient;
+using BotServer.TwitchBotClient.SignalRClient;
 using TwitchLib.EventSub.Core.EventArgs.Channel;
 using TwitchLib.EventSub.Webhooks.Core;
 using TwitchLib.EventSub.Webhooks.Core.EventArgs;
 using TwitchLib.EventSub.Webhooks.Core.Models;
 
-namespace BotServer.Database.Services
+namespace BotServer.HostedServices
 {
     public class EventSubHostedService : IHostedService
     {
-
         private readonly ILogger<EventSubHostedService> _logger;
         private readonly IEventSubWebhooks _eventSubWebhooks;
-        private BotSignalRClient _signalR;
+        private readonly IBotSignalRClient _signalR;
 
-        public EventSubHostedService(ILogger<EventSubHostedService> logger, IEventSubWebhooks eventSubWebhooks, BotSignalRClient signalR)
+        public EventSubHostedService(ILogger<EventSubHostedService> logger, IEventSubWebhooks eventSubWebhooks, IBotSignalRClient signalR)
         {
             _logger = logger;
             _eventSubWebhooks = eventSubWebhooks;
             _signalR = signalR;
         }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _eventSubWebhooks.ChannelFollow += OnFollow;
@@ -36,8 +36,6 @@ namespace BotServer.Database.Services
             await _signalR.SendFollow(channel, new Dictionary<string, string> { { "follow", user } });
 
             Console.WriteLine(user);
-
-            //return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -59,7 +57,6 @@ namespace BotServer.Database.Services
             _logger.LogError($"Reason: {e.Reason} - Message: {e.Message}");
         }
 
-        // Handling notifications that are not (yet) implemented
         private async Task OnUnknownEventSubNotification(object? sender, UnknownEventSubNotificationArgs e)
         {
             var metadata = (WebhookEventSubMetadata)e.Metadata;
@@ -67,7 +64,7 @@ namespace BotServer.Database.Services
 
             switch ((metadata.SubscriptionType, metadata.SubscriptionVersion))
             {
-                case ("channel.chat.message", "1"): /*code to handle the event*/ break;
+                case ("channel.chat.message", "1"): break;
                 default: break;
             }
         }

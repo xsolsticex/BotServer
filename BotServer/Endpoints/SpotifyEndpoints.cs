@@ -1,5 +1,5 @@
-﻿using BotServer.Database.Services;
-using BotServer.SpotifyClientApi;
+﻿using BotServer.API.Spotify;
+using BotServer.Database.Services;
 
 namespace BotServer.Endpoints
 {

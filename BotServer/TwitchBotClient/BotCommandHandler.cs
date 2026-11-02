@@ -1,4 +1,4 @@
-﻿using BotServer.Commands.Interface;
+﻿using BotServer.Interfaces;
 using System.Windows.Input;
 
 namespace BotServer.TwitchBotClient

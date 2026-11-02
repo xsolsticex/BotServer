@@ -1,5 +1,5 @@
 ﻿using BotServer.API;
-using BotServer.Commands.Interface;
+using BotServer.Interfaces;
 using TwitchLib.Api;
 using TwitchLib.Client;
 
