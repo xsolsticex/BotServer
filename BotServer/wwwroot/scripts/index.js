@@ -3,6 +3,7 @@ const usuario = window.location.pathname.split("/").pop();
 const contenedor = document.getElementById("container");
 const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
 
+let conectando = false;
 
 
 async function JoinChannel() {

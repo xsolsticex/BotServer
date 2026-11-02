@@ -3,6 +3,7 @@ const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAu
 const followCounter = document.getElementById("followCounter");
 const subCounter = document.getElementById("subCounter");
 
+let conectando = false;
 
 async function JoinChannel() {
     while (connection.state === signalR.HubConnectionState.Connected) {

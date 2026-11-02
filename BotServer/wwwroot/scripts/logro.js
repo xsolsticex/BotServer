@@ -8,6 +8,7 @@ const sound = new Audio("https://botserver-qccm.onrender.com/sounds/achievement.
 const usuario = window.location.pathname.split("/").pop();
 
 
+let conectando = false;
 
 async function JoinChannel() {
     while (connection.state === signalR.HubConnectionState.Connected) {
