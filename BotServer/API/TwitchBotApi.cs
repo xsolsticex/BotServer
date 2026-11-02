@@ -7,6 +7,7 @@ using TwitchLib.Api;
 using TwitchLib.Api.Auth;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Channels.SendChatMessage;
+using TwitchLib.Api.Helix.Models.EventSub;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace BotServer.API
@@ -15,13 +16,15 @@ namespace BotServer.API
     {
         private TwitchAPI _api;
         private IServiceScopeFactory _service;
+        private readonly TwitchAuthService _authService;
 
         private string redirectUri = "https://botserver-qccm.onrender.com/confirm";
 
-        public TwitchBotApi(TwitchAPI api, IServiceScopeFactory scope)
+        public TwitchBotApi(TwitchAPI api, IServiceScopeFactory scope, TwitchAuthService authService)
         {
             _api = api;
             _service = scope;
+            _authService = authService;
             _api.Settings.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID");
             _api.Settings.Secret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
             GenerateScopesUrl();
@@ -30,32 +33,7 @@ namespace BotServer.API
 
         }
 
-        public string GenerateScopesUrl()
-        {
-            List<string> scopes = new()
-    {
-        "chat:edit",
-        "moderator:manage:banned_users",
-        "chat:read",
-        "channel:manage:vips",
-        "channel:manage:moderators",
-        "channel:manage:polls",
-        "moderator:manage:shoutouts",
-        "user:manage:whispers",
-        "clips:edit",
-        "channel:manage:broadcast",
-        "moderator:manage:chat_messages",
-        "channel:read:subscriptions",
-        "moderator:read:followers",
-
-        // Scopes para identificar la cuenta como bot
-        "user:bot",
-        "user:read:chat",
-        "user:write:chat"
-    };
-
-            return string.Join("%20", scopes);
-        }
+        public string GenerateScopesUrl() => _authService.GenerateScopesUrl();
 
 
         //public async Task GetChatters(string broadcasterId)
@@ -71,8 +49,9 @@ namespace BotServer.API
     string broadcasterId,
     string? botId = null)
         {
+            var request = new GetEventSubSubscriptionsRequest();
             var events = await _api.Helix.EventSub
-                .GetEventSubSubscriptionsAsync();
+                .GetEventSubSubscriptionsAsync(request);
 
             const string callback =
                 "https://botserver-qccm.onrender.com/eventSub";
@@ -135,7 +114,8 @@ namespace BotServer.API
 
             while (true)
             {
-                var subs = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(accessToken: token, clientId: cl.Settings.ClientId);
+                var request = new GetEventSubSubscriptionsRequest();
+                var subs = await _api.Helix.EventSub.GetEventSubSubscriptionsAsync(request, accessToken: token, clientId: cl.Settings.ClientId);
 
                 if (subs.Subscriptions.Length == 0) break;
 
@@ -194,33 +174,9 @@ namespace BotServer.API
         }
 
 
-        public async Task<UserToken?> GetTokenWithCode(string code)
-        {
-            AuthCodeResponse token = await _api.Auth.GetAccessTokenFromCodeAsync(code, clientId: _api.Settings.ClientId, clientSecret: _api.Settings.Secret, redirectUri: "https://botserver-qccm.onrender.com/confirm");
+        public async Task<UserToken?> GetTokenWithCode(string code) => await _authService.GetTokenWithCode(code);
 
-            if (token is not null)
-            {
-                return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
-            }
-            else
-            {
-                return null;
-            }
-
-        }
-
-        public async Task<ValidateAccessTokenResponse?> ValidateToken(string token)
-        {
-            var isValid = await _api.Auth.ValidateAccessTokenAsync(accessToken: token);
-
-            if (isValid is not null)
-            {
-                return isValid;
-            }
-            return null;
-
-
-        }
+        public async Task<ValidateAccessTokenResponse?> ValidateToken(string token) => await _authService.ValidateToken(token);
 
         public async Task<int> GetFollowers(string username, string userid)
         {
@@ -293,16 +249,7 @@ namespace BotServer.API
         }
 
 
-        public async Task<string> GetAppToken()
-        {
-            var client = new TwitchAPI();
-            client.Settings.ClientId = _api.Settings.ClientId;
-            client.Settings.Secret = _api.Settings.Secret;
-
-            var appToken = await client.Auth.GetAccessTokenAsync();
-
-            return appToken;
-        }
+        public async Task<string> GetAppToken() => await _authService.GetAppToken();
 
         public async Task<Users> GetUserData(string username)
         {
@@ -334,13 +281,7 @@ namespace BotServer.API
 
 
 
-        public async Task<UserToken> RefreshToken(string refreshtoken)
-        {
-
-            RefreshResponse token = await _api.Auth.RefreshAuthTokenAsync(refreshtoken, _api.Settings.Secret, _api.Settings.ClientId);
-
-            return new UserToken { AccessToken = token.AccessToken, RefreshToken = token.RefreshToken };
-        }
+        public async Task<UserToken> RefreshToken(string refreshtoken) => await _authService.RefreshToken(refreshtoken);
 
 
         public async Task<User> GetUser(string twitch_id)
@@ -350,58 +291,9 @@ namespace BotServer.API
             return user;
         }
 
-        public async Task<UserToken> GetValidToken(UserToken token)
-        {
-            var isValid = await ValidateToken(token.AccessToken);
+        public async Task<UserToken> GetValidToken(UserToken token) => await _authService.GetValidToken(token);
 
-            if (isValid == null)
-            {
-                token = await RefreshToken(token.RefreshToken);
-                isValid = await ValidateToken(token.AccessToken);
-
-            }
-
-
-            _api.Settings.AccessToken = token.AccessToken;
-
-            token.Username = isValid.Login;
-            token.UserId = isValid.UserId;
-
-            return token;
-        }
-
-        public async Task<UserToken> GetValidToken(string username)
-        {
-            var service = _service.CreateScope();
-            var tokenService = service.ServiceProvider.GetRequiredService<TokensService>();
-            var token = await tokenService.GetAccessToken(username);
-
-            if (token == null)
-                throw new Exception($"No existe un token para el usuario '{username}'.");
-
-            var isValid = await ValidateToken(token.AccessToken);
-
-            if (isValid == null)
-            {
-                //refreshed token
-                var refreshedToken = await RefreshToken(token.RefreshToken);
-
-                token.AccessToken = refreshedToken.AccessToken;
-                token.RefreshToken = refreshedToken.RefreshToken;
-
-                await tokenService.SaveData();
-
-                isValid = await ValidateToken(token.AccessToken);
-
-            }
-
-            _api.Settings.AccessToken = token.AccessToken;
-
-            token.Username = isValid.Login;
-            token.UserId = isValid.UserId;
-
-            return token;
-        }
+        public async Task<UserToken> GetValidToken(string username) => await _authService.GetValidToken(username);
 
 
         public async Task GetChannelBadges()
@@ -447,7 +339,7 @@ namespace BotServer.API
 
             //Get channel info
             var channelid = await channelsDb.GetChannelId(channel);
-            var badges = await _api.Helix.Chat.GetChannelChatBadgesAsync(broadcaster_id = broadcaster_id);
+            var badges = await _api.Helix.Chat.GetChannelChatBadgesAsync(broadcaster_id);
             var emoteSet = badges.EmoteSet;
 
 
@@ -464,20 +356,7 @@ namespace BotServer.API
 
         }
 
-        public async Task GetAutorizationUrl(bool local = false)
-        {
-
-            var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
-            if (con == "local")
-            {
-                redirectUri = "http://localhost:8000/confirm";
-            }
-            var scopes = GenerateScopesUrl();
-            //Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope=chat:edit%20moderator:manage:banned_users%20chat:read%20channel:manage:vips%20channel:manage:moderators%20channel:manage:polls%20moderator:manage:shoutouts%20user:manage:whispers%20clips:edit%20channel:manage:broadcast%20moderator:manage:chat_messages%20channel:read:subscriptions%20moderator:read:followers&response_type=code&force_verify=true");
-            Console.WriteLine($"Auth URL : https://id.twitch.tv/oauth2/authorize?client_id={_api.Settings.ClientId}&redirect_uri={redirectUri}&scope={scopes}&response_type=code&force_verify=true");
-            await Task.Delay(8000);
-        }
+        public async Task GetAutorizationUrl(bool local = false) => await _authService.GetAuthorizationUrl(local);
 
     }
 }

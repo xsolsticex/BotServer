@@ -30,6 +30,7 @@ namespace BotServer.Extensions
             services.AddDbContext<TwitchDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
             services.AddScoped<TwitchClientFactory>();
             services.AddSingleton<TwitchAPI>(new TwitchAPI());
+            services.AddSingleton<TwitchAuthService>();
             services.AddSingleton<TwitchBotApi>();
             services.AddScoped<UsersService>();
             services.AddSingleton<BotSignalRClient>();

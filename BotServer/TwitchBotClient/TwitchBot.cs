@@ -28,8 +28,6 @@ namespace BotServer.TwitchBotClient
         /// </summary>
         private BotEventHandler _events;
 
-        private List<ITwitchCommand> botCommands;
-
         /// <summary>
         /// Factoría para crear ámbitos de servicios
         /// y resolver dependencias mediante inyección.
@@ -46,7 +44,6 @@ namespace BotServer.TwitchBotClient
         /// Cliente de Spotify para acceder a sus funcionalidades.
         /// </summary>
         private SpotyClient _spoty;
-        private TwitchBotApi _api;
 
         /// <summary>
         /// Nombre del canal principal de Twitch.

@@ -18,7 +18,7 @@ namespace BotServer.Commands
             _api  = api;
         }
 
-        public async Task ExecuteAsync(string channel,string username, string[] args)
+        public async Task ExecuteAsync(string channel, string? username = null, string[]? args = null)
         {
             var broadcaster = await _api.GetUserData(channel);
             var bot = await _api.GetUserData("xhipibotx");

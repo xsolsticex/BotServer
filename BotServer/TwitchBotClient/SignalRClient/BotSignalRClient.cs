@@ -1,178 +1,164 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.Numerics;
-using TwitchLib.Api.Helix.Models.Moderation.CheckAutoModStatus;
 
 namespace BotServer.TwitchBotClient.SignalRClient
 {
     public class BotSignalRClient
     {
         HubConnection connection;
-        public BotSignalRClient()
-        {
-            var cnd = new List<string> { "local", "remote" };
-            var con = cnd[1];
-            if (con == "local")
-            {
-                connection = new HubConnectionBuilder().WithUrl("http://localhost:8000/chatHub").WithAutomaticReconnect().Build();
+        private readonly ILogger<BotSignalRClient> _logger;
 
+        public BotSignalRClient(ILogger<BotSignalRClient> logger)
+        {
+            _logger = logger;
+            if (AppEnvironment.IsLocal)
+            {
+                connection = new HubConnectionBuilder()
+                    .WithUrl("http://localhost:8000/chatHub")
+                    .WithAutomaticReconnect()
+                    .Build();
             }
             else
             {
-                connection = new HubConnectionBuilder().WithUrl("https://botserver-qccm.onrender.com/chatHub").WithAutomaticReconnect().Build();
+                connection = new HubConnectionBuilder()
+                    .WithUrl("https://botserver-qccm.onrender.com/chatHub")
+                    .WithAutomaticReconnect()
+                    .Build();
             }
-
-
-
 
             connection.On<string>("botMessage", (message) =>
             {
-
-                Console.WriteLine($"Bot message: {message}");
-
+                _logger.LogInformation("Bot message: {Message}", message);
             });
 
             connection.Reconnecting += (error) =>
             {
-                Console.WriteLine($"SignalR perdiendo conexión. Intentando reconectar... Motivo: {error?.Message}");
+                _logger.LogWarning(error, "SignalR perdiendo conexión. Intentando reconectar...");
                 return Task.CompletedTask;
-
             };
 
             connection.Reconnected += (connectionId) =>
             {
-                Console.WriteLine($"SignalR reconectado con éxito. Nueva ID: {connectionId}");
+                _logger.LogInformation("SignalR reconectado con éxito. Nueva ID: {ConnectionId}", connectionId);
                 return Task.CompletedTask;
             };
 
             connection.Closed += async (error) =>
             {
-                Console.WriteLine($"SignalR cerrado de forma definitiva: {error?.Message}. Reiniciando de forma manual...");
-                await IntentarConectarConBucle(); // Fuerza el reinicio si falla la automática
+                _logger.LogError(error, "SignalR cerrado de forma definitiva. Reiniciando de forma manual...");
+                await EnsureConnectedAsync();
             };
-
-            
-
-
-
         }
 
-        private async Task IntentarConectarConBucle()
+        private async Task EnsureConnectedAsync()
         {
-            while (connection.State == HubConnectionState.Disconnected)
+            if (connection.State == HubConnectionState.Connected)
+                return;
+
+            while (connection.State != HubConnectionState.Connected)
             {
                 try
                 {
-                    await connection.StartAsync();
-                    Console.WriteLine("SignalR conectado correctamente.");
+                    if (connection.State == HubConnectionState.Disconnected)
+                    {
+                        await connection.StartAsync();
+                        _logger.LogInformation("SignalR conectado correctamente.");
+                    }
+                    else
+                    {
+                        await Task.Delay(2000);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error al conectar: {ex.Message}. Reintentando en 5 segundos...");
+                    _logger.LogError(ex, "Error al conectar SignalR. Reintentando en 5 segundos...");
                     await Task.Delay(5000);
                 }
             }
         }
 
-
         public async Task StartClient()
         {
-            await IntentarConectarConBucle();
+            await EnsureConnectedAsync();
         }
-
 
         public async Task Send(string channel, Dictionary<string, object> message)
         {
-                        // 3. Validación de estado antes de enviar para evitar crashes
-            if (connection.State != HubConnectionState.Connected)
-            {
-                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}"); 
-                Console.WriteLine("Estado Actual: "+connection.State);
-                return;
-            }
+            await EnsureConnectedAsync();
 
             try
             {
                 var sw = Stopwatch.StartNew();
                 await connection.SendAsync("SendFromBot", channel, message);
-                Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
+                _logger.LogDebug("SignalR Send: {Elapsed} ms", sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+                _logger.LogError(ex, "Error al enviar mensaje SignalR: {Message}", ex.Message);
             }
         }
 
-
         public async Task SendFollow(string channel, Dictionary<string, string> message)
         {
-            // 3. Validación de estado antes de enviar para evitar crashes
-            if (connection.State != HubConnectionState.Connected)
-            {
-                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
-                Console.WriteLine("Estado Actual: " + connection.State);
-                return;
-            }
+            await EnsureConnectedAsync();
 
             try
             {
                 var sw = Stopwatch.StartNew();
                 await connection.SendAsync("SendFollower", channel, message);
-                Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
+                _logger.LogDebug("SignalR SendFollow: {Elapsed} ms", sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+                _logger.LogError(ex, "Error al enviar mensaje SendFollow: {Message}", ex.Message);
             }
         }
 
-
         public async Task UpdateFollowers(string channel, Dictionary<string, int> message)
         {
-            // 3. Validación de estado antes de enviar para evitar crashes
-            if (connection.State != HubConnectionState.Connected)
-            {
-                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
-                Console.WriteLine("Estado Actual: " + connection.State);
-                return;
-            }
+            await EnsureConnectedAsync();
 
             try
             {
                 var sw = Stopwatch.StartNew();
                 await connection.SendAsync("UpdateFollowers", channel, message);
-                Console.WriteLine($"SignalR: {sw.ElapsedMilliseconds} ms");
+                _logger.LogDebug("SignalR UpdateFollowers: {Elapsed} ms", sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+                _logger.LogError(ex, "Error al actualizar seguidores: {Message}", ex.Message);
             }
         }
 
-        public async Task UpdateCounter(string channel,string counter_state)
+        public async Task UpdateCounter(string channel, string counter_state)
         {
-            if (connection.State != HubConnectionState.Connected)
-            {
-                Console.WriteLine($"No se pudo enviar el mensaje. El cliente está en estado: {connection.State}");
-                Console.WriteLine("Estado Actual: " + connection.State);
-                return;
-            }
+            await EnsureConnectedAsync();
 
             try
             {
-                await connection.SendAsync("UpdateCounter",channel, counter_state);               
-                
+                var sw = Stopwatch.StartNew();
+                await connection.SendAsync("UpdateCounter", channel, counter_state);
+                _logger.LogDebug("SignalR UpdateCounter: {Elapsed} ms", sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+                _logger.LogError(ex, "Error al actualizar contador: {Message}", ex.Message);
             }
-
         }
 
         internal async Task ChangeColor(string channel, string color)
         {
-            await connection.SendAsync("ChangeColor", channel, color);
+            await EnsureConnectedAsync();
+
+            try
+            {
+                await connection.SendAsync("ChangeColor", channel, color);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar color: {Message}", ex.Message);
+            }
         }
     }
 }

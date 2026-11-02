@@ -106,4 +106,9 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="BotServer.UnitTests\**" />
+    <Compile Remove="UnitTests\**" />
+  </ItemGroup>
+
 </Project>

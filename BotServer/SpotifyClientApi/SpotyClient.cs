@@ -27,6 +27,7 @@ namespace BotServer.SpotifyClientApi
             if(result != null)
             {
                 var first = result.Tracks.Items.FirstOrDefault();
+                if (first == null) return;
                 var songid = first.Id;
 
                 PlayerResumePlaybackRequest req = new PlayerResumePlaybackRequest {Uris = new List<string> { first.Uri} };

@@ -39,7 +39,7 @@ namespace BotServer.TwitchBotClient
         }
 
 
-        private async Task RegisterNewEvent(string eventType, Users broadcaster, IEventSubCondition condition, string level, string bot = null)
+        private async Task RegisterNewEvent(string eventType, Users broadcaster, IEventSubCondition condition, string level, string? bot = null)
         {
             var exists = false;
 
@@ -319,8 +319,6 @@ namespace BotServer.TwitchBotClient
             if (exists == null)
             {
 
-                var cnd = new List<string> { "local", "remote" };
-                var con = cnd[1];
                 var urlOBS = $"http://localhost:8000/chat/{username}";
                 var urlAuth = $"http://localhost:8000/connect";
 
@@ -333,7 +331,7 @@ namespace BotServer.TwitchBotClient
                     await db.AddChannel(username);
 
 
-                    if (con == "remote")
+                    if (AppEnvironment.IsRemote)
                     {
                         urlOBS = $"https://botserver-qccm.onrender.com/chat/{username}";
                         urlAuth = $"https://botserver-qccm.onrender.com/connect";

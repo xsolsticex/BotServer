@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="BotServer/BotServer.csproj" />
+  <Project Path="Tests/Tests.csproj" />
 </Solution>

@@ -10,13 +10,10 @@ namespace BotServer.Endpoints
             app.Map("/connect", () =>
             {
 
-                var cnd = new List<string> { "local", "remote" };
                 var client_id = Environment.GetEnvironmentVariable("CLIENT_ID");
-                var cnt = cnd[1];
-
                 var redirect = "http://localhost:8000/confirm";
 
-                if (cnt == "remote")
+                if (AppEnvironment.IsRemote)
                 {
                     redirect = Environment.GetEnvironmentVariable("REDIRECT_URL");
                 }
