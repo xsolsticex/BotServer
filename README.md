@@ -36,10 +36,8 @@ BotServer/
 │   ├── Data/                 # Contexto EF Core, modelos, DTO, servicios y migraciones
 │   ├── Features/
 │   │   ├── Badges/           # Resolución de insignias del chat
-│   │   ├── Chat/             # Mensajes, perfiles y modelo de Markov
-│   │   └── Releases/         # Lanzamientos de hoy y mañana
+│   │   └── Chat/             # Mensajes, perfiles y modelo de Markov
 │   ├── Integrations/
-│   │   ├── Igdb/             # Consulta de lanzamientos y autenticación de aplicación
 │   │   ├── Spotify/          # Cliente y tokens de Spotify
 │   │   └── Twitch/           # API, Auth, Chat/Commands y EventSub/Conditions
 │   ├── Web/
@@ -59,7 +57,6 @@ BotServer/
 │   ├── Badges/               # Comprobaciones de SQLite e insignias
 │   ├── Handlers/             # Comprobaciones de eventos y comandos
 │   ├── Markov/               # Comprobaciones del modelo y temporizadores
-│   ├── Releases/             # Comprobaciones de IGDB y del calendario
 │   └── Overlays/             # Comprobaciones JavaScript
 ├── BotServer.slnx            # Aplicación, Tests privado y comprobaciones .NET
 ├── Dockerfile               # Imagen Docker
@@ -180,7 +177,6 @@ Estos endpoints permiten iniciar y completar el flujo OAuth de Twitch para autor
 
 ### Overlays
 
-- `/releases` — tarjetas de los lanzamientos de hoy y mañana, sin depender del canal
 - `/notifier/{username}`
 - `/status/{username}`
 - `/chat/{username}`
@@ -256,42 +252,6 @@ Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twit
 dotnet run --project Checks/Markov/MarkovChecks.csproj
 ```
 
-### Lanzamientos de hoy y mañana
-
-Añade `/releases` como fuente de navegador de OBS (ancho recomendado: 960 px,
-alto: 520 px). Su fondo es transparente y las tarjetas rotan cada 15 segundos.
-El backend consulta [IGDB](https://api-docs.igdb.com/) desde
-`/api/releases`, usando `CLIENT_ID` y `CLIENT_SECRET` de tu aplicación Twitch;
-el HTML nunca recibe el secreto ni el token.
-
-El intervalo comprende hoy y mañana completos en `Europe/Madrid`, desde las
-00:00 de hoy hasta las 00:00 de pasado mañana (límite excluido), incluidos los
-cambios de horario. No es una ventana móvil de 48 horas desde la consulta.
-Se consultan lanzamientos con día confirmado, sin filtro regional.
-Se muestra una tarjeta por identificador de juego de IGDB, agrupando únicamente
-las plataformas que reciben ese juego hoy o mañana. Si las fechas varían,
-se muestran junto a cada plataforma. Las descripciones se muestran en el idioma
-que devuelve IGDB.
-
-Los resultados se almacenan en memoria durante tres horas; las listas vacías se
-actualizan cada diez minutos. La precisión del día se obtiene de `date_format`,
-sin filtrar por el campo obsoleto `category`. El overlay comprueba
-actualizaciones cada 15 minutos y reintenta errores al minuto. Si falla una
-actualización, puede mostrar datos del mismo intervalo señalados como pendientes
-de actualización. A medianoche se invalida el calendario anterior, aunque su
-caché no haya caducado, y el overlay solicita el nuevo calendario.
-Los estados de error y de intervalo sin lanzamientos se muestran por separado.
-El JSON utiliza `periodStart` y `periodEnd`; la ruta antigua `/api/releases/week`
-también devuelve este nuevo intervalo, no una semana completa.
-
-Las tarjetas no muestran precios. Se excluyen los juegos etiquetados en IGDB
-como `free-to-play`, `f2p` o `free2play`, sin peticiones adicionales a la API.
-Como ese etiquetado puede estar incompleto, no se garantiza que todos los juegos
-restantes sean de pago. Las portadas proceden de `images.igdb.com`, con atribución a IGDB.
-Permite las conexiones HTTPS a `id.twitch.tv`, `api.igdb.com` y
-`images.igdb.com` en los entornos con red restringida. Consulta también los
-[requisitos de uso de IGDB](https://api-docs.igdb.com/#about).
-
 Con el servidor escuchando en el puerto 10000, usa estas URLs como fuentes de
 navegador en OBS, sustituyendo `tuusuario` por el canal:
 
@@ -307,15 +267,13 @@ La ruta `/` no tiene una página de inicio configurada. Usa las rutas de overlay
 ### Comprobaciones
 
 Los programas de `Checks/` están separados de tu proyecto privado `Tests/` y
-realizan 84 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
+realizan 48 comprobaciones locales sin conectarse a Twitch ni Spotify:
 
 ```bash
 dotnet run --project Checks/Badges/BadgeChecks.csproj
 dotnet run --project Checks/Handlers/HandlerChecks.csproj
 dotnet run --project Checks/Markov/MarkovChecks.csproj
-dotnet run --project Checks/Releases/ReleaseChecks.csproj
 node --experimental-vm-modules Checks/Overlays/overlays.test.cjs
-node --experimental-vm-modules Checks/Releases/overlay.test.cjs
 ```
 
 Son programas ejecutables con aserciones: `dotnet test` no los ejecuta.

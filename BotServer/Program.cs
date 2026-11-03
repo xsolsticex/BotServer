@@ -49,7 +49,6 @@ namespace BotServer
 
             app.MapOAuthEndpoints();
             app.MapOverlayEndpoints();
-            app.MapReleaseEndpoints();
             app.MapSpotifyEndpoints();
 
             app.MapHub<ChatHub>("/chatHub");
