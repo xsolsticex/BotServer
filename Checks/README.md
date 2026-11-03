@@ -16,7 +16,7 @@ node --experimental-vm-modules Checks/Releases/overlay.test.cjs
 ```
 
 Son programas de comprobación que terminan con error si falla una aserción;
-`dotnet test` no los ejecuta. Entre los seis realizan 76 comprobaciones.
+`dotnet test` no los ejecuta. Entre los seis realizan 81 comprobaciones.
 Usan SQLite temporal y servicios simulados, sin conectar a Twitch o Spotify ni
 modificar la base del servidor. Cada carpeta contiene sus instrucciones.
 

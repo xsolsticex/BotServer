@@ -37,7 +37,7 @@ public sealed class IgdbReleaseClient(IHttpClientFactory clients, IConfiguration
             for (var page = 0; page < 20; page++)
             {
                 // category is deprecated. Expand the current date_format relation and check precision locally.
-                var query = $"fields date,date_format.format,game.id,game.name,game.summary,game.cover.url,platform.id,platform.name,platform.abbreviation; " +
+                var query = $"fields date,date_format.format,game.id,game.name,game.summary,game.cover.url,game.keywords.slug,platform.id,platform.name,platform.abbreviation; " +
                     $"where date >= {week.From.ToUnixTimeSeconds()} & date < {week.Until.ToUnixTimeSeconds()}; " +
                     $"sort date asc; limit 500; offset {page * 500};";
                 var rows = await RequestPageAsync(clientId, secret, query, cancellationToken);
@@ -103,6 +103,13 @@ public sealed record IgdbReleaseDate(long Date, int? Category, IgdbGame? Game, I
         : Category == 0; // Compatibility with stored fixtures/legacy responses; missing category is not zero.
 }
 public sealed record IgdbDateFormat(string? Format);
-public sealed record IgdbGame(int Id, string? Name, string? Summary, IgdbCover? Cover);
+public sealed record IgdbGame(int Id, string? Name, string? Summary, IgdbCover? Cover,
+    IReadOnlyList<IgdbKeyword>? Keywords = null)
+{
+    public bool IsFreeToPlay => Keywords?.Any(keyword =>
+        string.Concat((keyword.Slug ?? "").Where(char.IsLetterOrDigit)).ToLowerInvariant()
+            is "freetoplay" or "f2p" or "free2play") == true;
+}
+public sealed record IgdbKeyword(string? Slug);
 public sealed record IgdbCover(string? Url);
 public sealed record IgdbPlatform(int Id, string? Name, string? Abbreviation);

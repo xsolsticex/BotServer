@@ -2,7 +2,7 @@ namespace BotServer.Features.Releases;
 
 public sealed record ReleasePlatform(int Id, string Name, IReadOnlyList<string> Dates);
 public sealed record WeeklyRelease(int Id, string Title, string Description, string? ImageUrl,
-    string FirstReleaseDate, IReadOnlyList<ReleasePlatform> Platforms, string PriceLabel = "Por confirmar");
+    string FirstReleaseDate, IReadOnlyList<ReleasePlatform> Platforms);
 public sealed record WeeklyReleases(string WeekStart, string WeekEnd, string TimeZone,
     DateTimeOffset UpdatedAt, bool IsStale, IReadOnlyList<WeeklyRelease> Games);
 

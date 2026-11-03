@@ -26,10 +26,22 @@ var dates = new[] {
 var games = WeeklyReleaseService.BuildGames(dates, week);
 Check(games.Count == 1 && games[0].Platforms.Count == 2, "One card per game; only platforms released this week");
 Check(games[0].Platforms[0].Dates.Count == 1 && games[0].Platforms[1].Dates.Single() == "2026-11-04", "Duplicate release records collapse; platform dates are preserved");
-Check(games[0].Description.Length <= 260 && games[0].PriceLabel == "Por confirmar", "Short summary and no invented prices");
+Check(games[0].Description.Length <= 260 && !JsonSerializer.Serialize(games[0]).Contains("Price", StringComparison.OrdinalIgnoreCase), "Short summary and no price in the API response");
 Check(games[0].ImageUrl == "https://images.igdb.com/igdb/image/upload/t_cover_big/test.jpg", "Cover URL uses HTTPS and the large IGDB image");
 var noCover = dates[0] with { Game = dates[0].Game! with { Cover = new("https://untrusted.test/image.jpg") } };
 Check(WeeklyReleaseService.BuildGames([noCover], week)[0].ImageUrl == null, "Untrusted cover URLs use the fallback");
+
+foreach (var slug in new[] { "free-to-play", "f2p", "free2play" })
+{
+    var free = dates[0] with { Game = dates[0].Game! with { Keywords = [new(slug)] } };
+    Check(WeeklyReleaseService.BuildGames([free], week).Count == 0, "Exclude IGDB free-to-play keyword: " + slug);
+}
+var taggedPlatform = dates[1] with { Game = dates[1].Game! with { Keywords = [new("free-to-play")] } };
+Check(WeeklyReleaseService.BuildGames([dates[0], taggedPlatform], week).Count == 0,
+    "A free-to-play tag on any platform removes the whole game");
+var untagged = dates[0] with { Game = dates[0].Game! with { Keywords = [new("action")] } };
+Check(WeeklyReleaseService.BuildGames([untagged], week).Count == 1,
+    "Unrelated keywords do not exclude a game");
 
 var modernJson = """
     [{"date":TIMESTAMP,"date_format":{"id":1,"format":"YYYYMMMMDD"},
@@ -77,7 +89,7 @@ var response = await client.GetReleaseDatesAsync(week, CancellationToken.None);
 await client.GetReleaseDatesAsync(week, CancellationToken.None);
 Check(response.Count == 1 && transport.TokenRequests == 1 && transport.ApiRequests == 2,
     "OAuth token is reused across IGDB requests");
-Check(transport.Queries.All(query => query.Contains("date_format.format") && !query.Contains("category") && query.Contains("limit 500")
+Check(transport.Queries.All(query => query.Contains("date_format.format") && query.Contains("game.keywords.slug") && !query.Contains("category") && query.Contains("limit 500")
     && query.Contains($"date >= {week.From.ToUnixTimeSeconds()}") && query.Contains($"date < {week.Until.ToUnixTimeSeconds()}")),
     "IGDB query uses the current date_format relation without deprecated category filters");
 transport.Unauthorized = true;

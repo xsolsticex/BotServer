@@ -48,12 +48,12 @@ async function fixture(response = payload()) {
     };
 }
 
-test('renders one game with all weekly platforms, text content and no invented price', async () => {
+test('renders one game with all weekly platforms and no price field', async () => {
     const f = await fixture();
     assert.equal(f.elements.get('release-title').textContent, 'Juego 1');
     assert.equal(f.elements.get('release-platforms').children.length, 2);
     assert.equal(f.elements.get('release-description').textContent, '<b>Descripción</b>');
-    assert.equal(f.elements.get('release-price').textContent, 'Por confirmar');
+    assert.equal(f.elements.has('release-price'), false);
     assert.equal(f.elements.get('release-cover').hidden, true);
     await f.event('pagehide');
 });

@@ -39,7 +39,6 @@ function render() {
     setText("release-description", game.description);
     setText("release-position", `${index + 1} / ${data.games.length}`);
     setText("release-week", `${dateText(data.weekStart, true)} — ${dateText(data.weekEnd, true)} · Madrid`);
-    setText("release-price", game.priceLabel || "Por confirmar");
     setText("release-freshness", data.isStale ? "Últimos datos disponibles · actualización pendiente" : "");
     const date = document.getElementById("release-date");
     date.dateTime = game.firstReleaseDate;

@@ -5,12 +5,14 @@ dotnet run --project Checks/Releases/ReleaseChecks.csproj
 node --experimental-vm-modules Checks/Releases/overlay.test.cjs
 ```
 
-Las 22 comprobaciones usan respuestas HTTP simuladas; no necesitan credenciales
+Las 27 comprobaciones usan respuestas HTTP simuladas; no necesitan credenciales
 ni consultan IGDB. Cubren la semana de Madrid y sus cambios de horario, los
 límites inclusivo/exclusivo, una tarjeta por juego, fechas por plataforma,
 precisión de fecha, portadas, caché, errores, paginación y renovación del token.
 Se verifica el campo actual `date_format` sin `category`, así como los formatos
 de día, mes y precisión desconocida y la actualización de semanas vacías.
+También se comprueba la exclusión de las tres etiquetas free-to-play y la
+eliminación del precio del contrato de respuesta.
 Las seis pruebas JavaScript adicionales comprueban renderizado, rotación,
 errores, semana vacía y limpieza al cerrar o restaurar la página.
 

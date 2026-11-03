@@ -59,6 +59,7 @@ public sealed class WeeklyReleaseService(IIgdbReleaseClient igdb, TimeProvider c
                 && !string.IsNullOrWhiteSpace(row.Game.Name) && row.Platform?.Id > 0
                 && !string.IsNullOrWhiteSpace(row.Platform.Name))
             .GroupBy(row => row.Game!.Id)
+            .Where(group => !group.Any(row => row.Game!.IsFreeToPlay))
             .Select(group =>
             {
                 var game = group.First().Game!;

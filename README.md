@@ -279,8 +279,10 @@ actualización, puede mostrar datos de la misma semana señalados como pendiente
 de actualización; nunca reutiliza los juegos de la semana anterior.
 Los estados de error y de semana sin lanzamientos se muestran por separado.
 
-IGDB no proporciona precios: el campo muestra **«Por confirmar»**, sin inventar
-un importe. Las portadas proceden de `images.igdb.com`, con atribución a IGDB.
+Las tarjetas no muestran precios. Se excluyen los juegos etiquetados en IGDB
+como `free-to-play`, `f2p` o `free2play`, sin peticiones adicionales a la API.
+Como ese etiquetado puede estar incompleto, no se garantiza que todos los juegos
+restantes sean de pago. Las portadas proceden de `images.igdb.com`, con atribución a IGDB.
 Permite las conexiones HTTPS a `id.twitch.tv`, `api.igdb.com` y
 `images.igdb.com` en los entornos con red restringida. Consulta también los
 [requisitos de uso de IGDB](https://api-docs.igdb.com/#about).
@@ -300,7 +302,7 @@ La ruta `/` no tiene una página de inicio configurada. Usa las rutas de overlay
 ### Comprobaciones
 
 Los programas de `Checks/` están separados de tu proyecto privado `Tests/` y
-realizan 76 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
+realizan 81 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
 
 ```bash
 dotnet run --project Checks/Badges/BadgeChecks.csproj
