@@ -21,6 +21,8 @@ namespace BotServer.TwitchBotClient
         private readonly IBotSignalRClient _signalR;
         private readonly SpotyClient _spoty;
         private readonly ILogger<TwitchBot> _logger;
+        private readonly MarkovChatService _markov;
+        private readonly TimeSpan _markovInterval;
         private string? _mainChannel;
 
         public TwitchBot(
@@ -28,13 +30,20 @@ namespace BotServer.TwitchBotClient
             IServiceScopeFactory scope,
             IBotSignalRClient signalR,
             SpotyClient spoty,
-            ILogger<TwitchBot> logger)
+            ILogger<TwitchBot> logger,
+            MarkovChatService markov,
+            IConfiguration configuration)
         {
             _events = events;
             _scope = scope;
             _signalR = signalR;
             _spoty = spoty;
             _logger = logger;
+            _markov = markov;
+            var intervalSeconds = configuration.GetValue<int?>("Markov:IntervalSeconds") ?? 300;
+            if (intervalSeconds < 1 || intervalSeconds > 86400)
+                throw new ArgumentOutOfRangeException(nameof(configuration), "Markov:IntervalSeconds must be between 1 and 86400.");
+            _markovInterval = TimeSpan.FromSeconds(intervalSeconds);
         }
 
         public async Task Stop()
@@ -115,7 +124,21 @@ namespace BotServer.TwitchBotClient
                 await InitializeTwitch();
                 await InitializeChannels();
 
-                await Task.Delay(Timeout.Infinite, stoppingToken);
+                await _markov.RunPostingAsync(_markovInterval,
+                    () => _client?.IsConnected == true
+                        ? _client.JoinedChannels.Select(channel => channel.Channel).ToArray()
+                        : Array.Empty<string>(),
+                    async (channel, phrase) =>
+                    {
+                        try
+                        {
+                            await SendMessage(channel, phrase);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not send Markov message to {Channel}.", channel);
+                        }
+                    }, stoppingToken);
             }
             catch (OperationCanceledException)
             {

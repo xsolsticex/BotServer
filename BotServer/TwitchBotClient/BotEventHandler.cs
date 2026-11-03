@@ -15,14 +15,16 @@ namespace BotServer.TwitchBotClient
         private readonly TwitchBotApi _api;
         private readonly IServiceScopeFactory _scope;
         private readonly IBotSignalRClient _signalR;
+        private readonly MarkovChatService _markov;
 
         public bool eventsInitialized { get; set; } = false;
 
-        public BotEventHandler(IBotSignalRClient signalR, TwitchBotApi api, IServiceScopeFactory scope)
+        public BotEventHandler(IBotSignalRClient signalR, TwitchBotApi api, IServiceScopeFactory scope, MarkovChatService markov)
         {
             _signalR = signalR;
             _api = api;
             _scope = scope;
+            _markov = markov;
         }
 
         public void Initialize(TwitchClient client)
@@ -168,6 +170,10 @@ namespace BotServer.TwitchBotClient
             var channel = e.ChatMessage.Channel;
             var color = string.IsNullOrEmpty(e.ChatMessage.HexColor) ? "#ffc107" : e.ChatMessage.HexColor;
             var user = e.ChatMessage.Username;
+            if (!string.Equals(user, _client?.TwitchUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                _markov.Learn(channel, message);
+            }
             var rawBadges = e.ChatMessage.Badges.Select(b => b.Key).ToList();
 
             using var scope = _scope.CreateScope();

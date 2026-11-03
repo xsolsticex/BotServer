@@ -172,6 +172,30 @@ Permite enviar eventos y mensajes en tiempo real desde el backend hacia clientes
 
 ## Uso
 
+### Frases de Markov
+
+El bot aprende fragmentos aleatorios de hasta 30 palabras consecutivas de los
+mensajes del chat. Una tarea periódica del bot publica automáticamente una frase
+en cada canal conectado que tenga datos, cada 5 minutos por defecto. No utiliza
+un comando. Puedes cambiar el intervalo con `Markov:IntervalSeconds` en la
+configuración o la variable de entorno `Markov__IntervalSeconds` (entre 1 y 86400
+segundos). El primer envío se realiza después del primer intervalo; los canales
+sin datos se omiten. Los comandos y los mensajes del propio bot no se usan como
+entrenamiento. La tarea se cancela al detener el bot y omite los envíos mientras
+está desconectado.
+
+Los modelos se mantienen únicamente en memoria, separados por canal, y se vacían
+cada hora desde el arranque del servicio (también si no hay actividad). Reiniciar
+el servidor también los elimina. Se admiten hasta 64 canales y 4000 transiciones
+por canal; al alcanzar el límite se deja de aprender hasta el siguiente reinicio
+horario. Las respuestas tienen un máximo de 30 palabras y 400 caracteres.
+
+Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twitch:
+
+```bash
+dotnet run --project MarkovChecks/MarkovChecks.csproj
+```
+
 Una vez levantado el servidor, puedes abrir la aplicación en:
 
 ```text
