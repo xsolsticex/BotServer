@@ -365,3 +365,7 @@ FodyWeavers.xsd
 # Local Unit Tests folder
 Tests/
 /BotServer/PROJECT_ERROR_REPORT.md
+
+# Source folders named Releases are not build output.
+!/BotServer/Features/Releases/
+!/Checks/Releases/

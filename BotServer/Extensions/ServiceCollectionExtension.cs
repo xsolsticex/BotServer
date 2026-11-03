@@ -9,6 +9,8 @@ using BotServer.Integrations.Twitch.Chat;
 using BotServer.Features.Badges;
 using BotServer.Features.Chat;
 using BotServer.Web.SignalR;
+using BotServer.Integrations.Igdb;
+using BotServer.Features.Releases;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text;
@@ -30,6 +32,18 @@ namespace BotServer.Extensions
 
             services.AddSingleton<OAuthService>();
             services.AddSingleton(TimeProvider.System);
+            services.AddHttpClient("Igdb", client =>
+            {
+                client.BaseAddress = new Uri("https://api.igdb.com/v4/");
+                client.Timeout = TimeSpan.FromSeconds(15);
+            });
+            services.AddHttpClient("IgdbOAuth", client =>
+            {
+                client.BaseAddress = new Uri("https://id.twitch.tv/");
+                client.Timeout = TimeSpan.FromSeconds(15);
+            });
+            services.AddSingleton<IIgdbReleaseClient, IgdbReleaseClient>();
+            services.AddSingleton<WeeklyReleaseService>();
             services.AddSingleton<MarkovChatService>();
             services.AddHostedService<MarkovChatService>(sp => sp.GetRequiredService<MarkovChatService>());
             services.AddSingleton<TwitchBot>();

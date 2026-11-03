@@ -36,8 +36,10 @@ BotServer/
 │   ├── Data/                 # Contexto EF Core, modelos, DTO, servicios y migraciones
 │   ├── Features/
 │   │   ├── Badges/           # Resolución de insignias del chat
-│   │   └── Chat/             # Mensajes, perfiles y modelo de Markov
+│   │   ├── Chat/             # Mensajes, perfiles y modelo de Markov
+│   │   └── Releases/         # Calendario semanal de videojuegos
 │   ├── Integrations/
+│   │   ├── Igdb/             # Consulta de lanzamientos y autenticación de aplicación
 │   │   ├── Spotify/          # Cliente y tokens de Spotify
 │   │   └── Twitch/           # API, Auth, Chat/Commands y EventSub/Conditions
 │   ├── Web/
@@ -57,6 +59,7 @@ BotServer/
 │   ├── Badges/               # Comprobaciones de SQLite e insignias
 │   ├── Handlers/             # Comprobaciones de eventos y comandos
 │   ├── Markov/               # Comprobaciones del modelo y temporizadores
+│   ├── Releases/             # Comprobaciones de IGDB y del calendario semanal
 │   └── Overlays/             # Comprobaciones JavaScript
 ├── BotServer.slnx            # Aplicación, Tests privado y comprobaciones .NET
 ├── Dockerfile               # Imagen Docker
@@ -177,6 +180,7 @@ Estos endpoints permiten iniciar y completar el flujo OAuth de Twitch para autor
 
 ### Overlays
 
+- `/releases` — tarjetas de los lanzamientos de la semana, sin depender del canal
 - `/notifier/{username}`
 - `/status/{username}`
 - `/chat/{username}`
@@ -252,6 +256,33 @@ Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twit
 dotnet run --project Checks/Markov/MarkovChecks.csproj
 ```
 
+### Lanzamientos de la semana
+
+Añade `/releases` como fuente de navegador de OBS (ancho recomendado: 960 px,
+alto: 520 px). Su fondo es transparente y las tarjetas rotan cada 15 segundos.
+El backend consulta [IGDB](https://api-docs.igdb.com/) desde
+`/api/releases/week`, usando `CLIENT_ID` y `CLIENT_SECRET` de tu aplicación Twitch;
+el HTML nunca recibe el secreto ni el token.
+
+La semana va de lunes a domingo en `Europe/Madrid`, incluidos los cambios de
+horario. Se consultan lanzamientos con día confirmado, sin filtro regional.
+Se muestra una tarjeta por identificador de juego de IGDB, agrupando únicamente
+las plataformas que reciben ese juego durante la semana. Si las fechas varían,
+se muestran junto a cada plataforma. Las descripciones se muestran en el idioma
+que devuelve IGDB.
+
+Los resultados se almacenan en memoria durante tres horas. El overlay comprueba
+actualizaciones cada 15 minutos y reintenta errores al minuto. Si falla una
+actualización, puede mostrar datos de la misma semana señalados como pendientes
+de actualización; nunca reutiliza los juegos de la semana anterior.
+Los estados de error y de semana sin lanzamientos se muestran por separado.
+
+IGDB no proporciona precios: el campo muestra **«Por confirmar»**, sin inventar
+un importe. Las portadas proceden de `images.igdb.com`, con atribución a IGDB.
+Permite las conexiones HTTPS a `id.twitch.tv`, `api.igdb.com` y
+`images.igdb.com` en los entornos con red restringida. Consulta también los
+[requisitos de uso de IGDB](https://api-docs.igdb.com/#about).
+
 Con el servidor escuchando en el puerto 10000, usa estas URLs como fuentes de
 navegador en OBS, sustituyendo `tuusuario` por el canal:
 
@@ -267,13 +298,15 @@ La ruta `/` no tiene una página de inicio configurada. Usa las rutas de overlay
 ### Comprobaciones
 
 Los programas de `Checks/` están separados de tu proyecto privado `Tests/` y
-realizan 48 comprobaciones locales sin conectarse a Twitch ni Spotify:
+realizan 72 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
 
 ```bash
 dotnet run --project Checks/Badges/BadgeChecks.csproj
 dotnet run --project Checks/Handlers/HandlerChecks.csproj
 dotnet run --project Checks/Markov/MarkovChecks.csproj
+dotnet run --project Checks/Releases/ReleaseChecks.csproj
 node --experimental-vm-modules Checks/Overlays/overlays.test.cjs
+node --experimental-vm-modules Checks/Releases/overlay.test.cjs
 ```
 
 Son programas ejecutables con aserciones: `dotnet test` no los ejecuta.
