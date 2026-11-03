@@ -1,235 +1,59 @@
-﻿
-const usuario = window.location.pathname.split("/").pop();
-const contenedor = document.getElementById("container");
-const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").withAutomaticReconnect().build();
+import { createOverlayConnection } from "./overlay-connection.js";
 
-let conectando = false;
+const container = document.getElementById("container");
+const overlay = createOverlayConnection();
+const timers = new Map();
 
-
-async function JoinChannel() {
-    while (connection.state === signalR.HubConnectionState.Connected) {
-        try {
-            await connection.invoke("Join", usuario);
-
-            console.log("Unido al canal:", usuario);
-            return;
-        } catch (error) {
-            console.error("Error al unirse:", error);
-            await sleep(3000);
-        }
-    }
+function removeMessage(message) {
+    clearTimeout(timers.get(message));
+    timers.delete(message);
+    message.remove();
 }
-
-//Listener del cliente
-connection.on("botMessage", message => {
-    createMessage(message);
-});
-
-
-connection.on("ColorChanged", message => {
-    console.log(message);
-
-    if (CSS.supports("color", message)) {
-
-        document.documentElement.style.setProperty("--border-message", message);
-    } else {
-        document.documentElement.style.setProperty("--border-message", "#66b2ff");
-    }
-
-
-});
-
-
-connection.onreconnecting(error => {
-    console.warn("SignalR reconectando:", error);
-});
-
-connection.onreconnected(async connectionId => {
-    console.log("SignalR reconectado:", connectionId);
-
-    await JoinChannel();
-});
-
-connection.onclose(error => {
-    console.log("Conexión cerrada:", error);
-});
-
-
-
-
-
-//Conexion al socket SignalR
-async function Connect() {
-    if (conectando) return;
-
-    conectando = true;
-
+function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+}
+function image(url) {
+    const img = element("img");
+    img.alt = "";
+    if (typeof url !== "string" || !url.trim()) return img;
     try {
-        while (connection.state === signalR.HubConnectionState.Disconnected) {
-            try {
-                await connection.start();
-
-                console.log("SignalR conectado");
-
-                await JoinChannel();
-                return;
-            } catch (error) {
-                console.error("Error de conexión:", error);
-                await sleep(3000);
-            }
-        }
-    } finally {
-        conectando = false;
-    }
+        const parsed = new URL(url, window.location.origin);
+        if (["http:", "https:"].includes(parsed.protocol)) img.src = parsed.href;
+    } catch { /* Leave malformed URLs unset. */ }
+    return img;
 }
-
-
-
-
-
-
-//Captura de errores
-Connect().catch(err => console.error(err));
-
-
-
-//NEW SOCKET FUNCTIONS
-
-
-setInterval(() => {
-
-    var size = contenedor.children.length;
-
-    if (size > 5) {
-        var child = contenedor.firstElementChild;
-        child.classList.add("removing");
-        setTimeout(() => {
-            child.remove();
-        }, 1000); // duración de la animación
-    }
-}, 3600);
-
-
 function createMessage(data) {
-
-
-    var username = data["username"];
-    var content = data["content"];
-    var color = data["color"];
-    var profile = data["profile"];
-    var badges = data["badges"];
-
-
-    var mensaje = document.createElement("div")
-
-    mensaje.classList.add("mensaje");
-
-    if (badges.length == 1) {
-        mensaje.innerHTML = `
-    <div class="sect-1">
-        <img src="${profile}">
-    </div>
-    <div class="sect-2">
-    <div class='subheader'>
-           <span class='badges'>
-              <img src='${badges[0]}'/>
-       </span>
-       <span style='color: ${color}'>${username}</span>
-    </subheader>
-
-       <div>
-          ${content}
-       </div>
-    </div>`
-    } else if (badges.length == 2) {
-        mensaje.innerHTML = `
-    <div class="sect-1">
-        <img src="${profile}">
-    </div>
-    <div class="sect-2">
-    <div class='subheader'>
-        <div class='top'>
-            <span class='badges'>
-                <img src='${badges[0]}'/>
-                <img src='${badges[1]}'/>
-            </span>
-            <span style='color: ${color}'>${username}</span>
-        </div>
-    </div>
-    <div>
-        ${content}
-    </div>
-    </div>`
-    } else if (badges.length == 3) {
-        mensaje.innerHTML = `
-    <div class="sect-1">
-        <img src="${profile}">
-    </div>
-    <div class="sect-2">
-    <div class='subheader'>
-        <div class='top'>
-            <span class='badges'>
-                <img src='${badges[0]}'/>
-                <img src='${badges[1]}'/>
-                <img src='${badges[2]}'/>
-            </span>
-            <span style='color: ${color}'>${username}</span>
-        </div>
-    </div>
-    <div>
-        ${content}
-    </div>
-    </div>`
-    } else if (badges.length == 4) {
-        mensaje.innerHTML = `
-    <div class="sect-1">
-        <img src="${profile}">
-    </div>
-    <div class="sect-2">
-    <div class='subheader'>
-        <div class='top'>
-            <span class='badges'>
-                <img src='${badges[0]}'/>
-                <img src='${badges[1]}'/>
-                <img src='${badges[2]}'/>
-                <img src='${badges[3]}'/>
-            </span>
-            <span style='color: ${color}'>${username}</span>
-        </div>
-    </div>
-    <div>
-        ${content}
-    </div>
-    </div>`
-    } else {
-        mensaje.innerHTML = `
-    <div class="sect-1">
-        <img src="${profile}">
-    </div>
-    <div class="sect-2">
-    <div class='subheader'>
-        <div class='top'>
-            <span style='color: ${color}'>${username}</span>
-        </div>
-    </div>
-    <div>
-        ${content}
-    </div>
-    </div>`
-    }
-
-
-
-    contenedor.appendChild(mensaje);
-    // Eliminar tras 10 segundos
-    setTimeout(() => {
-        mensaje.classList.add("removing");
-
-        setTimeout(() => {
-            mensaje.remove();
-        }, 1000); // duración animación
-    }, 60 * 1000);
-
-    console.log("");
-
+    if (!data || typeof data.content !== "string") return;
+    const message = element("div", "mensaje");
+    const profile = element("div", "sect-1");
+    profile.append(image(data.profile));
+    const body = element("div", "sect-2");
+    const header = element("div", "subheader");
+    const top = element("div", "top");
+    const badges = element("span", "badges");
+    for (const badge of (Array.isArray(data.badges) ? data.badges : []).slice(0, 4)) badges.append(image(badge));
+    const username = element("span", "", data.username);
+    username.style.color = CSS.supports("color", data.color) ? data.color : "#ffc107";
+    top.append(badges, username);
+    header.append(top);
+    // Treat chat content as text, not HTML with executable event handlers.
+    body.append(header, element("div", "", data.content));
+    message.append(profile, body);
+    container.append(message);
+    while (container.children.length > 5) removeMessage(container.firstElementChild);
+    timers.set(message, setTimeout(() => {
+        message.classList.add("removing");
+        timers.set(message, setTimeout(() => removeMessage(message), 1000));
+    }, 60000));
 }
+overlay.connection.on("botMessage", createMessage);
+overlay.connection.on("ColorChanged", color => {
+    document.documentElement.style.setProperty("--border-message", CSS.supports("color", color) ? color : "#66b2ff");
+});
+window.addEventListener("pagehide", () => {
+    for (const message of timers.keys()) removeMessage(message);
+});
+void overlay.start();
