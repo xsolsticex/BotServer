@@ -43,7 +43,7 @@ namespace BotServer.Extensions
                 client.Timeout = TimeSpan.FromSeconds(15);
             });
             services.AddSingleton<IIgdbReleaseClient, IgdbReleaseClient>();
-            services.AddSingleton<WeeklyReleaseService>();
+            services.AddSingleton<ReleaseService>();
             services.AddSingleton<MarkovChatService>();
             services.AddHostedService<MarkovChatService>(sp => sp.GetRequiredService<MarkovChatService>());
             services.AddSingleton<TwitchBot>();

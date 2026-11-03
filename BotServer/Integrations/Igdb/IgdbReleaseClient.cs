@@ -9,7 +9,7 @@ namespace BotServer.Integrations.Igdb;
 
 public interface IIgdbReleaseClient
 {
-    Task<IReadOnlyList<IgdbReleaseDate>> GetReleaseDatesAsync(ReleaseWeek week, CancellationToken cancellationToken);
+    Task<IReadOnlyList<IgdbReleaseDate>> GetReleaseDatesAsync(ReleasePeriod period, CancellationToken cancellationToken);
 }
 
 public sealed class IgdbConfigurationException : Exception
@@ -25,7 +25,7 @@ public sealed class IgdbReleaseClient(IHttpClientFactory clients, IConfiguration
     private DateTimeOffset _nextRequest;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<IReadOnlyList<IgdbReleaseDate>> GetReleaseDatesAsync(ReleaseWeek week, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<IgdbReleaseDate>> GetReleaseDatesAsync(ReleasePeriod period, CancellationToken cancellationToken)
     {
         var clientId = configuration["CLIENT_ID"];
         var secret = configuration["CLIENT_SECRET"];
@@ -38,13 +38,13 @@ public sealed class IgdbReleaseClient(IHttpClientFactory clients, IConfiguration
             {
                 // category is deprecated. Expand the current date_format relation and check precision locally.
                 var query = $"fields date,date_format.format,game.id,game.name,game.summary,game.cover.url,game.keywords.slug,platform.id,platform.name,platform.abbreviation; " +
-                    $"where date >= {week.From.ToUnixTimeSeconds()} & date < {week.Until.ToUnixTimeSeconds()}; " +
+                    $"where date >= {period.From.ToUnixTimeSeconds()} & date < {period.Until.ToUnixTimeSeconds()}; " +
                     $"sort date asc; limit 500; offset {page * 500};";
                 var rows = await RequestPageAsync(clientId, secret, query, cancellationToken);
                 result.AddRange(rows);
                 if (rows.Count < 500) return result;
             }
-            throw new HttpRequestException("IGDB exceeded the pagination limit; refusing to return an incomplete week.");
+            throw new HttpRequestException("IGDB exceeded the pagination limit; refusing to return an incomplete period.");
         }
         finally { _gate.Release(); }
     }

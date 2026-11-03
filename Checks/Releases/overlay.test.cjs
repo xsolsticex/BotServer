@@ -4,9 +4,9 @@ const vm = require('node:vm');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
-const payload = () => ({ weekStart: '2026-11-02', weekEnd: '2026-11-08', isStale: false, games: [1, 2].map(id => ({
+const payload = () => ({ periodStart: '2026-11-03', periodEnd: '2026-11-04', isStale: false, games: [1, 2].map(id => ({
     id, title: 'Juego ' + id, description: '<b>Descripción</b>', imageUrl: null,
-    firstReleaseDate: '2026-11-03', platforms: [{ name: 'PC', dates: ['2026-11-03'] }, { name: 'PS5', dates: ['2026-11-05'] }]
+    firstReleaseDate: '2026-11-03', platforms: [{ name: 'PC', dates: ['2026-11-03'] }, { name: 'PS5', dates: ['2026-11-04'] }]
 })) });
 async function fixture(response = payload()) {
     let now = Date.parse('2026-11-03T12:00:00Z');
@@ -23,7 +23,7 @@ async function fixture(response = payload()) {
         Date: ClockDate, Intl, AbortController, console: { warn() {} },
         document: { getElementById(name) { if (!elements.has(name)) elements.set(name, element()); return elements.get(name); }, createElement: element },
         window: { addEventListener(name, handler) { listeners.set(name, handler); } },
-        fetch: (url, options) => { assert.equal(url, '/api/releases/week'); fetches++; signal = options.signal; return answer(options.signal); },
+        fetch: (url, options) => { assert.equal(url, '/api/releases'); fetches++; signal = options.signal; return answer(options.signal); },
         setTimeout(fn, delay) { const next = ++id; timers.set(next, { fn, due: now + delay }); return next; },
         clearTimeout(id) { timers.delete(id); },
         setInterval(fn, delay) { const next = ++id; timers.set(next, { fn, due: now + delay, interval: delay }); return next; },
@@ -48,7 +48,7 @@ async function fixture(response = payload()) {
     };
 }
 
-test('renders one game with all weekly platforms and no price field', async () => {
+test('renders one game with all today/tomorrow platforms and no price field', async () => {
     const f = await fixture();
     assert.equal(f.elements.get('release-title').textContent, 'Juego 1');
     assert.equal(f.elements.get('release-platforms').children.length, 2);
@@ -68,19 +68,19 @@ test('rotates every fifteen seconds without refetching each card', async () => {
     assert.equal(f.elements.get('release-title').textContent, 'Juego 1');
     await f.event('pagehide');
 });
-test('empty week has its own status', async () => {
+test('empty period has its own status', async () => {
     const value = payload(); value.games = [];
     const f = await fixture(value);
     assert.match(f.elements.get('release-status').textContent, /No hay lanzamientos/);
     assert.equal(f.elements.get('release-card').hidden, true);
     await f.event('pagehide');
 });
-test('failed updates are marked stale and never display the previous week', async () => {
+test('failed updates are marked stale and never display the previous day', async () => {
     const f = await fixture();
     f.answer(async () => ({ ok: false, status: 503 }));
     await f.advance(15 * 60000);
     assert.match(f.elements.get('release-freshness').textContent, /actualización pendiente/);
-    await f.advance(7 * 86400000);
+    await f.advance(86400000);
     assert.equal(f.elements.get('release-card').hidden, true);
     assert.match(f.elements.get('release-status').textContent, /No se han podido cargar/);
     await f.event('pagehide');
@@ -105,6 +105,24 @@ test('pagehide aborts requests and releases timers; pageshow resumes safely', as
     assert.equal(f.timers.size, 0);
     f.answer(async () => ({ ok: true, json: async () => payload() }));
     await f.event('pageshow', { persisted: true });
+    assert.equal(f.elements.get('release-card').hidden, false);
+    await f.event('pagehide');
+});
+
+test('day rollover fetches the new today/tomorrow calendar', async () => {
+    const f = await fixture();
+    const next = payload();
+    next.periodStart = '2026-11-04'; next.periodEnd = '2026-11-05';
+    for (const game of next.games) {
+        game.firstReleaseDate = '2026-11-04';
+        game.platforms[0].dates = ['2026-11-04'];
+        game.platforms[1].dates = ['2026-11-05'];
+    }
+    f.answer(async () => ({ ok: true, json: async () => next }));
+    const calls = f.fetches;
+    await f.advance(86400000);
+    assert.equal(f.fetches, calls + 1);
+    assert.match(f.elements.get('release-period').textContent, /4 nov.*5 nov/);
     assert.equal(f.elements.get('release-card').hidden, false);
     await f.event('pagehide');
 });

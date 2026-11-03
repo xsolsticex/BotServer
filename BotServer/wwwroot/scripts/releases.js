@@ -10,11 +10,10 @@ let rotation;
 let refresh;
 let retry;
 
-function currentWeekStart() {
+function currentDay() {
     const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
     const part = type => parts.find(item => item.type === type).value;
     const day = new Date(`${part("year")}-${part("month")}-${part("day")}T12:00:00Z`);
-    day.setUTCDate(day.getUTCDate() - (day.getUTCDay() + 6) % 7);
     return day.toISOString().slice(0, 10);
 }
 
@@ -26,11 +25,12 @@ function setText(id, text) { document.getElementById(id).textContent = text; }
 function showStatus(message) { card.hidden = true; status.hidden = false; status.textContent = message; }
 
 function render() {
-    if (!data || data.weekStart !== currentWeekStart()) {
-        showStatus("Actualizando los lanzamientos de esta semana…");
+    if (!data || data.periodStart !== currentDay()) {
+        showStatus("Actualizando los lanzamientos de hoy y mañana…");
+        if (data) void load();
         return;
     }
-    if (data.games.length === 0) { showStatus("No hay lanzamientos con fecha confirmada para esta semana."); return; }
+    if (data.games.length === 0) { showStatus("No hay lanzamientos con fecha confirmada para hoy y mañana."); return; }
     const game = data.games[index % data.games.length];
     status.hidden = true;
     card.hidden = false;
@@ -38,7 +38,7 @@ function render() {
     setText("release-art-title", game.title);
     setText("release-description", game.description);
     setText("release-position", `${index + 1} / ${data.games.length}`);
-    setText("release-week", `${dateText(data.weekStart, true)} — ${dateText(data.weekEnd, true)} · Madrid`);
+    setText("release-period", `${dateText(data.periodStart, true)} — ${dateText(data.periodEnd, true)} · Madrid`);
     setText("release-freshness", data.isStale ? "Últimos datos disponibles · actualización pendiente" : "");
     const date = document.getElementById("release-date");
     date.dateTime = game.firstReleaseDate;
@@ -63,11 +63,11 @@ async function load() {
     request = controller;
     const timeout = setTimeout(() => controller.abort(), 30000);
     try {
-        const response = await fetch("/api/releases/week", { signal: controller.signal, cache: "no-store" });
+        const response = await fetch("/api/releases", { signal: controller.signal, cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const next = await response.json();
-        if (!Array.isArray(next.games) || !/^\d{4}-\d{2}-\d{2}$/.test(next.weekStart)
-            || !/^\d{4}-\d{2}-\d{2}$/.test(next.weekEnd)
+        if (!Array.isArray(next.games) || !/^\d{4}-\d{2}-\d{2}$/.test(next.periodStart)
+            || !/^\d{4}-\d{2}-\d{2}$/.test(next.periodEnd)
             || next.games.some(game => typeof game.title !== "string" || !Array.isArray(game.platforms)
                 || !/^\d{4}-\d{2}-\d{2}$/.test(game.firstReleaseDate)
                 || game.platforms.some(platform => !Array.isArray(platform.dates)))) throw new Error("Invalid release data");
@@ -79,7 +79,7 @@ async function load() {
         render();
     } catch (error) {
         if (!active || request !== controller) return;
-        if (data?.weekStart === currentWeekStart() && data.games.length) {
+        if (data?.periodStart === currentDay() && data.games.length) {
             data.isStale = true;
             render();
         } else showStatus("No se han podido cargar los lanzamientos. Reintentando…");
