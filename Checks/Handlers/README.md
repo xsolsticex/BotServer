@@ -3,7 +3,7 @@
 Desde la raíz del repositorio:
 
 ```bash
-dotnet run --project Tests/Handlers/HandlerChecks.csproj
+dotnet run --project Checks/Handlers/HandlerChecks.csproj
 ```
 
 Las 13 comprobaciones usan SQLite temporal, el contenedor real de dependencias y

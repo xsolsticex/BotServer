@@ -51,7 +51,8 @@ BotServer/
 │   ├── appsettings.Development.json
 │   ├── BotServer.csproj     # Proyecto .NET
 │   └── libman.json          # Gestión de librerías cliente
-├── Tests/
+├── Tests/                    # Proyecto local ignorado: Tests.csproj
+├── Checks/
 │   ├── Badges/               # Comprobaciones de SQLite e insignias
 │   ├── Handlers/             # Comprobaciones de eventos y comandos
 │   ├── Markov/               # Comprobaciones del modelo y temporizadores
@@ -66,7 +67,7 @@ BotServer/
 ## Requisitos previos
 
 Las instrucciones de compilación y las 48 comprobaciones locales están en
-[Tests/README.md](Tests/README.md). Los namespaces siguen la nueva estructura.
+[Checks/README.md](Checks/README.md). Los namespaces siguen la nueva estructura.
 Las migraciones conservan sus identificadores y operaciones de SQLite; las
 futuras migraciones deben guardarse en `BotServer/Data/Migrations`.
 
@@ -209,7 +210,7 @@ horario. Las respuestas tienen un máximo de 30 palabras y 400 caracteres.
 Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twitch:
 
 ```bash
-dotnet run --project Tests/Markov/MarkovChecks.csproj
+dotnet run --project Checks/Markov/MarkovChecks.csproj
 ```
 
 Una vez levantado el servidor, puedes abrir la aplicación en:

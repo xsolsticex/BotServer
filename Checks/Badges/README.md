@@ -3,7 +3,7 @@
 Desde la raíz del repositorio:
 
 ```bash
-dotnet run --project Tests/Badges/BadgeChecks.csproj
+dotnet run --project Checks/Badges/BadgeChecks.csproj
 ```
 
 Las 11 comprobaciones usan una base SQLite temporal y no acceden a Twitch ni a

@@ -3,7 +3,7 @@
 Desde la raíz del repositorio, con Node.js 24:
 
 ```bash
-node --experimental-vm-modules Tests/Overlays/overlays.test.cjs
+node --experimental-vm-modules Checks/Overlays/overlays.test.cjs
 ```
 
 Ejecuta ocho pruebas con SignalR, DOM, red y temporizadores simulados, sin
