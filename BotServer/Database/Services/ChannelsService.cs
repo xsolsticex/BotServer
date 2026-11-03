@@ -1,4 +1,5 @@
 ﻿using BotServer.Database.Models;
+using Microsoft.EntityFrameworkCore;
 using SQLitePCL;
 
 namespace BotServer.Database.Services
@@ -15,7 +16,7 @@ namespace BotServer.Database.Services
 
         public async Task AddChannel(string name,int followers = 0,int subs=0)
         {
-            var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name.ToLower()).FirstOrDefault();
+            var channel = await _context.JoinedChannels.FirstOrDefaultAsync(ch => ch.ChannelName.ToLower() == name.ToLower());
 
             if (channel == null) {
 
@@ -27,7 +28,7 @@ namespace BotServer.Database.Services
 
         public async Task UpdateChannel(string name, int followers = 0, int subs = 0)
         {
-            var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name.ToLower()).FirstOrDefault();
+            var channel = await _context.JoinedChannels.FirstOrDefaultAsync(ch => ch.ChannelName.ToLower() == name.ToLower());
 
             if (channel != null)
             {
@@ -40,14 +41,14 @@ namespace BotServer.Database.Services
 
         public async Task<List<string>> GetChannels()
         {
-            var channels = _context.JoinedChannels.Select(ch => ch.ChannelName).ToList();
+            var channels = await _context.JoinedChannels.Select(ch => ch.ChannelName).ToListAsync();
             return channels;
 
         }
 
-        public async Task<JoinedChannels> FindChannel(string name)
+        public async Task<JoinedChannels?> FindChannel(string name)
         {
-            var channel = _context.JoinedChannels.Where(ch => ch.ChannelName.ToLower() == name).FirstOrDefault();
+            var channel = await _context.JoinedChannels.FirstOrDefaultAsync(ch => ch.ChannelName.ToLower() == name.ToLower());
             return channel;
 
         }

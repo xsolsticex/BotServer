@@ -59,24 +59,7 @@ namespace BotServer.Database.Services
 
         public async Task<List<string>> GetUrlBadge(List<string> badges)
         {
-            return _context.GlobalBadges.Where(b => badges.Contains(b.name)).Select(b => b.url).ToList();
-
-
-
-
-
-            //Find badge
-
-            //    if (custom_exists == null)
-            //    {
-            //        var newBadge = new CustomBadges { ChannelId = channel.Id, BadgeUrl = badge.BadgeUrl, SetId = badge.SetId };
-            //        await _context.CustomBadges.AddAsync(newBadge);
-            //        await _context.SaveChangesAsync();
-
-            //    }
-            //}
-
-
+            return await _context.GlobalBadges.Where(b => badges.Contains(b.name)).Select(b => b.url).ToListAsync();
         }
 
         public async Task AddAllBadges(List<CustomBadge> badges)

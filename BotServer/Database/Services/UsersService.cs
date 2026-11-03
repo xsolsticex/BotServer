@@ -79,24 +79,41 @@ namespace BotServer.Database.Services
 
         public async Task AddTokens(UserToken user)
         {
-            var exists = await _dbContext.Users.Where(u => u.Username == user.Username).FirstOrDefaultAsync();
+            var exists = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == user.Username.ToLower());
+            if (exists == null)
+            {
+                return;
+            }
             exists.Profile = user.Profile;
-            UserTokens f;
 
-            f = new UserTokens {AccessToken=user.AccessToken,RefreshToken=user.RefreshToken,UsersId = exists.Id };
+            var f = await _dbContext.Tokens.FirstOrDefaultAsync(p => p.UsersId == exists.Id);
+
+            if (f == null)
+            {
+                f = new UserTokens { AccessToken = user.AccessToken, RefreshToken = user.RefreshToken, UsersId = exists.Id };
+                await _dbContext.Tokens.AddAsync(f);
+            }
+            else
+            {
+                f.AccessToken = user.AccessToken;
+                f.RefreshToken = user.RefreshToken;
+            }
 
             await _dbContext.SaveChangesAsync();
 
         }
 
 
-        public async Task<UserToken> UpdateUser(UserToken user)
+        public async Task<UserToken?> UpdateUser(UserToken user)
         {
-            var exists = await _dbContext.Users.Where(u => u.Username.ToLower() == user.Username.ToLower()).FirstOrDefaultAsync();
+            var exists = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == user.Username.ToLower());
+            if (exists == null)
+            {
+                return null;
+            }
             exists.Profile = user.Profile;
-            UserTokens f;
 
-            f = await _dbContext.Tokens.Where(p => p.UsersId == exists.Id).FirstOrDefaultAsync();
+            var f = await _dbContext.Tokens.FirstOrDefaultAsync(p => p.UsersId == exists.Id);
 
             if (f == null)
             {

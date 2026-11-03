@@ -42,6 +42,7 @@ namespace BotServer.Database.Services
         public async Task CreateToken(UserToken user)
         {
             await _dbContext.Tokens.AddAsync(new UserTokens {Id = int.Parse(user.UserId),AccessToken=user.AccessToken,RefreshToken=user.RefreshToken });
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task SaveData()

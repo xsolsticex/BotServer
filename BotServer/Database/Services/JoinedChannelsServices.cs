@@ -1,4 +1,5 @@
-﻿using SQLitePCL;
+﻿using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using TwitchLib.Client.Models;
 
 namespace BotServer.Database.Services
@@ -14,7 +15,7 @@ namespace BotServer.Database.Services
 
         public async Task<int> GetChannelId(string name)
         {
-            return _context.JoinedChannels.Where(c=> c.ChannelName == name).Select(c=>c.Id).FirstOrDefault();
+            return await _context.JoinedChannels.Where(c=> c.ChannelName == name).Select(c=>c.Id).FirstOrDefaultAsync();
         }
     }
 }
