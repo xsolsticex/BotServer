@@ -7,6 +7,7 @@ BotServer es un backend para bots y overlays de Twitch, desarrollado con .NET 10
 - Servidor web con ASP.NET Core
 - Integración con Twitch mediante TwitchLib
 - Soporte para comandos, eventos y automatizaciones del bot
+- Frases de Markov por canal, enviadas automáticamente solo durante el directo
 - Autenticación OAuth para usuarios y canales de Twitch
 - Integración con Spotify para autenticación y consumo de datos
 - Comunicación en tiempo real con SignalR
@@ -57,7 +58,7 @@ BotServer/
 │   ├── Handlers/             # Comprobaciones de eventos y comandos
 │   ├── Markov/               # Comprobaciones del modelo y temporizadores
 │   └── Overlays/             # Comprobaciones JavaScript
-├── BotServer.slnx            # Aplicación y proyectos de comprobación .NET
+├── BotServer.slnx            # Aplicación, Tests privado y comprobaciones .NET
 ├── Dockerfile               # Imagen Docker
 ├── .gitignore
 ├── .gitattributes
@@ -66,15 +67,11 @@ BotServer/
 
 ## Requisitos previos
 
-Las instrucciones de compilación y las 48 comprobaciones locales están en
-[Checks/README.md](Checks/README.md). Los namespaces siguen la nueva estructura.
-Las migraciones conservan sus identificadores y operaciones de SQLite; las
-futuras migraciones deben guardarse en `BotServer/Data/Migrations`.
-
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- [Docker](https://www.docker.com/)
 - Git
-- Cuenta de Twitch
+- Credenciales de una aplicación de Twitch para ejecutar el bot
+- Node.js 24 para las comprobaciones JavaScript
+- Docker, si utilizas contenedores
 - Credenciales de Spotify (si vas a usar la integración)
 
 ## Instalación
@@ -86,30 +83,63 @@ git clone https://github.com/xsolsticex/BotServer.git
 cd BotServer
 ```
 
-2. Restaura dependencias:
+2. Restaura y compila la aplicación desde la raíz del repositorio:
 
 ```bash
-cd BotServer
-dotnet restore
+dotnet restore BotServer/BotServer.csproj
+dotnet build BotServer/BotServer.csproj --no-restore
 ```
 
-3. Ejecuta la aplicación:
+3. Configura las variables y la ruta de SQLite descritas abajo. Para arrancar
+con una dirección explícita, sin los perfiles de lanzamiento:
 
 ```bash
-dotnet run
+dotnet run --project BotServer/BotServer.csproj --no-launch-profile --urls http://localhost:10000
 ```
+
+En Visual Studio, abre `BotServer.slnx` y selecciona `BotServer` como proyecto de
+inicio. La solución conserva `Tests/Tests.csproj`, un proyecto privado ignorado
+por Git. Debe estar presente en tu copia para compilar toda la solución; si no lo
+tienes, compila la aplicación con los comandos anteriores.
 
 ## Configuración
 
-El proyecto usa `appsettings.json` y variables de entorno para su configuración. Algunos valores importantes que se usan en código incluyen:
+Las credenciales de las integraciones se leen de variables de entorno. La
+configuración de ASP.NET Core y Markov también admite `appsettings.json`.
+Configura los secretos en tu entorno o plataforma de despliegue.
 
 | Variable | Descripción |
 |---|---|
-| `MAIN_CHANNEL` | Canal principal de Twitch del bot |
-| `CLIENT_ID` | Client ID de Twitch para autenticación OAuth |
-| `REDIRECT_URL` | URL de redirección usada en OAuth |
-| `ASPNETCORE_URLS` | Dirección y puerto del servidor |
-| `ConnectionStrings` o configuración equivalente | Base de datos y credenciales del entorno |
+| `MAIN_CHANNEL` | Canal principal del bot; por defecto, `xhipibotx` |
+| `CLIENT_ID` | Identificador de la aplicación de Twitch |
+| `CLIENT_SECRET` | Secreto de la aplicación de Twitch |
+| `REDIRECT_URL` | Redirección OAuth en modo remoto; debe coincidir con la registrada en Twitch |
+| `HOOK_SECRET` | Clave de verificación de webhooks EventSub; necesaria para arrancar |
+| `SPOTIFY_ID` | Identificador de la aplicación de Spotify |
+| `SPOTIFY_SECRET` | Secreto de la aplicación de Spotify |
+| `ASPNETCORE_URLS` | Direcciones de escucha; Docker configura `http://+:10000` |
+| `Markov__IntervalSeconds` | Intervalo de frases: 300 segundos por defecto, entre 1 y 86400 |
+
+### Entorno y base de datos
+
+`Configuration/AppEnvironment.cs` define el modo en código; actualmente es
+`remote`. No se selecciona mediante `ASPNETCORE_ENVIRONMENT`:
+
+| Modo | Base de datos | SignalR interno del bot |
+|---|---|---|
+| `remote` | `/data/twitch.db` | `https://botserver-qccm.onrender.com/chatHub` |
+| `local` | `twitch.db` junto al ejecutable | `http://localhost:8000/chatHub` |
+
+En modo remoto, `/data` debe existir y permitir escritura. Para desarrollo con el
+bot conectado al hub local, cambia `Mode` a `local` y usa el puerto 8000 en el
+comando de arranque. Las URLs de OAuth y Spotify también contienen valores fijos
+en sus servicios; cambiar el puerto de escucha no los actualiza.
+
+SQLite solo crea el archivo cuando falta. Al arrancar se aplican las migraciones
+pendientes sobre la base existente, sin borrarla ni recrearla. Están en
+`Data/Migrations` y conservan sus identificadores tras la reorganización.
+La identidad de las insignias es `(ChannelId, SetId)`, lo que permite compartir
+una misma URL entre varios canales.
 
 ## Ejecución con Docker
 
@@ -124,10 +154,15 @@ docker build -t botserver .
 ### Ejecutar el contenedor
 
 ```bash
-docker run -d --name botserver -p 10000:10000 botserver
+docker run -d --name botserver -p 10000:10000 \
+  --mount source=botserver-data,target=/data \
+  --env-file /ruta/a/variables-del-bot.env \
+  botserver
 ```
 
-La aplicación está diseñada para escuchar en el puerto `10000` por defecto.
+Sustituye la ruta del archivo de variables por tu archivo local de configuración.
+El volumen conserva SQLite al reemplazar el contenedor. La imagen escucha en el
+puerto `10000`; el cliente SignalR interno sigue la URL del modo seleccionado.
 
 ## Endpoints principales
 
@@ -182,7 +217,11 @@ El proyecto incluye soporte para:
 Se integra con la API de Spotify para autenticación y uso de datos del usuario.
 
 ### SignalR
-Permite enviar eventos y mensajes en tiempo real desde el backend hacia clientes web o overlays.
+
+El hub está en `/chatHub`. Los overlays usan el módulo compartido
+`wwwroot/scripts/overlay-connection.js`, con reintentos progresivos, recuperación
+del grupo del canal y cierre de la conexión al abandonar la página. Los recursos
+web se solicitan al mismo servidor que sirve el overlay.
 
 ## Uso
 
@@ -213,19 +252,32 @@ Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twit
 dotnet run --project Checks/Markov/MarkovChecks.csproj
 ```
 
-Una vez levantado el servidor, puedes abrir la aplicación en:
-
-```text
-http://localhost:10000
-```
-
-También puedes acceder a las rutas de overlay según la necesidad del proyecto, por ejemplo:
+Con el servidor escuchando en el puerto 10000, usa estas URLs como fuentes de
+navegador en OBS, sustituyendo `tuusuario` por el canal:
 
 ```text
 http://localhost:10000/chat/tuusuario
 http://localhost:10000/counter/tuusuario
 http://localhost:10000/status/tuusuario
+http://localhost:10000/notifier/tuusuario
 ```
+
+La ruta `/` no tiene una página de inicio configurada. Usa las rutas de overlay.
+
+### Comprobaciones
+
+Los programas de `Checks/` están separados de tu proyecto privado `Tests/` y
+realizan 48 comprobaciones locales sin conectarse a Twitch ni Spotify:
+
+```bash
+dotnet run --project Checks/Badges/BadgeChecks.csproj
+dotnet run --project Checks/Handlers/HandlerChecks.csproj
+dotnet run --project Checks/Markov/MarkovChecks.csproj
+node --experimental-vm-modules Checks/Overlays/overlays.test.cjs
+```
+
+Son programas ejecutables con aserciones: `dotnet test` no los ejecuta.
+Consulta [Checks/README.md](Checks/README.md) para más detalles.
 
 ## Despliegue
 
