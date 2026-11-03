@@ -38,10 +38,8 @@ namespace BotServer
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<TwitchDbContext>();
-                if (!File.Exists(dbPath))
-                {
-                    db.Database.Migrate();
-                }
+                // Creates SQLite only when absent; otherwise applies pending schema migrations in place.
+                db.Database.Migrate();
             }
 
             app.UseStaticFiles();

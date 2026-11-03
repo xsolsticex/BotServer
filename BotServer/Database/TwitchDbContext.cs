@@ -47,7 +47,7 @@ namespace BotServer.Database
     .HasForeignKey(m => m.ChannelId);
 
 
-            modelBuilder.Entity<CustomBadges>().HasIndex(c => c.BadgeUrl).IsUnique();
+            modelBuilder.Entity<CustomBadges>().HasIndex(c => new { c.ChannelId, c.SetId }).IsUnique();
 
             //Revisar esta contraint
 

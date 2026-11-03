@@ -129,31 +129,23 @@ namespace BotServer.TwitchBotClient
             return await _api.GetUserProfile(username);
         }
 
-        private async Task<List<string>> GetBadgesAsync(List<string> badges, string channel, IServiceScope scope)
+        private async Task<List<string>> GetBadgesAsync(List<string> badges, List<string> rawBadges, string channel, IServiceScope scope)
         {
             var badgesdb = scope.ServiceProvider.GetRequiredService<GlobalBadgesService>();
             var custombadgeDb = scope.ServiceProvider.GetRequiredService<CustomBadgesServices>();
 
-            var customBadgesTask = custombadgeDb.GetUrlCustomBadges(badges, channel);
-            var badgesurlTask = badgesdb.GetBadgesUrlbadges(badges);
-
-            await Task.WhenAll(customBadgesTask, badgesurlTask);
-
-            var customBadges = customBadgesTask.Result;
-            var badgesurl = badgesurlTask.Result;
-
-            if (customBadges != null)
-            {
-                foreach (var (setId, url) in customBadges)
-                {
-                    badgesurl[setId.ToLower()] = url;
-                }
-            }
+            // Both services share the scoped DbContext: do not run EF queries concurrently.
+            var customBadges = await custombadgeDb.GetUrlCustomBadges(rawBadges, channel);
+            var badgesurl = await badgesdb.GetBadgesUrlbadges(badges);
 
             var res = new List<string>();
-            foreach (var setId in badges)
+            for (var i = 0; i < badges.Count; i++)
             {
-                if (badgesurl.TryGetValue(setId.ToLowerInvariant(), out var url))
+                if (customBadges.TryGetValue(rawBadges[i], out var customUrl))
+                {
+                    res.Add(customUrl);
+                }
+                else if (badgesurl.TryGetValue(badges[i].ToLowerInvariant(), out var url))
                 {
                     res.Add(url);
                 }
@@ -182,19 +174,17 @@ namespace BotServer.TwitchBotClient
             {
                 var badges = FormatBadges(rawBadges);
 
-                // Parallelize fetching custom/global badges and user profile
-                var badgesTask = GetBadgesAsync(badges, channel, scope);
-                var profileTask = GetProfile(user, scope);
-
-                await Task.WhenAll(badgesTask, profileTask);
+                // Keep queries sequential because these services share the scoped DbContext.
+                var badgeUrls = await GetBadgesAsync(badges, rawBadges, channel, scope);
+                var profile = await GetProfile(user, scope);
 
                 var data = new Dictionary<string, object>
                 {
                     ["username"] = user,
                     ["content"] = message,
                     ["color"] = color,
-                    ["profile"] = profileTask.Result,
-                    ["badges"] = badgesTask.Result
+                    ["profile"] = profile,
+                    ["badges"] = badgeUrls
                 };
 
                 await _signalR.Send(channel, data);

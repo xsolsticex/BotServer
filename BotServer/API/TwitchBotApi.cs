@@ -319,7 +319,7 @@ namespace BotServer.API
 
                 customBadges.Add(new CustomBadge
                 {
-                    SetId = version.Title,
+                    SetId = item.SetId,
                     Channel = channel,
                     BadgeUrl = version.ImageUrl1x
                 });

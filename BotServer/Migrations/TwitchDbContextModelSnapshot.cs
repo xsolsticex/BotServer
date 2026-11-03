@@ -55,10 +55,8 @@ namespace BotServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BadgeUrl")
+                    b.HasIndex("ChannelId", "SetId")
                         .IsUnique();
-
-                    b.HasIndex("ChannelId");
 
                     b.ToTable("CustomBadges");
                 });
