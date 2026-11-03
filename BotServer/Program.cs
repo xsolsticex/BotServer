@@ -1,8 +1,9 @@
 using BotServer.Configuration;
-using BotServer.Database;
-using BotServer.Endpoints;
+using BotServer.Web.Endpoints;
+using BotServer.Data;
+
 using BotServer.Extensions;
-using BotServer.Hubs;
+using BotServer.Web.Hubs;
 using Microsoft.EntityFrameworkCore;
 using TwitchLib.EventSub.Webhooks.Extensions;
 

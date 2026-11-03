@@ -31,24 +31,32 @@ BotServer es un backend para bots y overlays de Twitch, desarrollado con .NET 10
 ```text
 BotServer/
 ├── BotServer/                # Proyecto principal
-│   ├── API/                  # Lógica de API y servicios relacionados
-│   ├── Commands/             # Comandos del bot
-│   ├── Database/             # Contexto EF Core, servicios y migraciones
-│   ├── Endpoints/            # Endpoints HTTP del servidor
-│   ├── Extensions/           # Extensiones para configuración
-│   ├── Hubs/                 # Hub de SignalR
-│   ├── Interfaces/           # Interfaces del proyecto
-│   ├── Migrations/           # Migraciones de base de datos
-│   ├── Properties/          # Configuración del proyecto
-│   ├── SpotifyClientApi/     # Cliente y utilidades de Spotify
-│   ├── TwitchBotClient/     # Cliente y handlers del bot de Twitch
+│   ├── Configuration/        # Configuración del entorno
+│   ├── Data/                 # Contexto EF Core, modelos, DTO, servicios y migraciones
+│   ├── Features/
+│   │   ├── Badges/           # Resolución de insignias del chat
+│   │   └── Chat/             # Mensajes, perfiles y modelo de Markov
+│   ├── Integrations/
+│   │   ├── Spotify/          # Cliente y tokens de Spotify
+│   │   └── Twitch/           # API, Auth, Chat/Commands y EventSub/Conditions
+│   ├── Web/
+│   │   ├── Endpoints/        # Rutas HTTP
+│   │   ├── Hubs/             # Hub de SignalR
+│   │   └── SignalR/          # Cliente interno del bot para los overlays
+│   ├── Extensions/           # Registro de servicios
+│   ├── Properties/           # Recursos y configuración de lanzamiento
 │   ├── wwwroot/              # Archivos estáticos y overlays
 │   ├── Program.cs            # Punto de entrada de la aplicación
 │   ├── appsettings.json     # Configuración principal
 │   ├── appsettings.Development.json
 │   ├── BotServer.csproj     # Proyecto .NET
 │   └── libman.json          # Gestión de librerías cliente
-├── BotServer.slnx           # Solución
+├── Tests/
+│   ├── Badges/               # Comprobaciones de SQLite e insignias
+│   ├── Handlers/             # Comprobaciones de eventos y comandos
+│   ├── Markov/               # Comprobaciones del modelo y temporizadores
+│   └── Overlays/             # Comprobaciones JavaScript
+├── BotServer.slnx            # Aplicación y proyectos de comprobación .NET
 ├── Dockerfile               # Imagen Docker
 ├── .gitignore
 ├── .gitattributes
@@ -56,6 +64,11 @@ BotServer/
 ```
 
 ## Requisitos previos
+
+Las instrucciones de compilación y las 48 comprobaciones locales están en
+[Tests/README.md](Tests/README.md). Los namespaces siguen la nueva estructura.
+Las migraciones conservan sus identificadores y operaciones de SQLite; las
+futuras migraciones deben guardarse en `BotServer/Data/Migrations`.
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Docker](https://www.docker.com/)
@@ -196,7 +209,7 @@ horario. Las respuestas tienen un máximo de 30 palabras y 400 caracteres.
 Para comprobar el modelo, sus límites y el reinicio horario sin conectar a Twitch:
 
 ```bash
-dotnet run --project MarkovChecks/MarkovChecks.csproj
+dotnet run --project Tests/Markov/MarkovChecks.csproj
 ```
 
 Una vez levantado el servidor, puedes abrir la aplicación en:

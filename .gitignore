@@ -362,6 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Local Unit Tests folder
-Tests/
+# Tests are tracked; bin/ and obj/ remain ignored.
 /BotServer/PROJECT_ERROR_REPORT.md
