@@ -1,9 +1,9 @@
 <Solution>
-  <Project Path="BotServer/BotServer.csproj" />
-  <Project Path="Tests/Tests.csproj" />
   <Folder Name="/Checks/">
     <Project Path="Checks/Badges/BadgeChecks.csproj" />
     <Project Path="Checks/Handlers/HandlerChecks.csproj" />
     <Project Path="Checks/Markov/MarkovChecks.csproj" />
   </Folder>
+  <Project Path="BotServer/BotServer.csproj" />
+  <Project Path="Tests/Tests.csproj" />
 </Solution>
