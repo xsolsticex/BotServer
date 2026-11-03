@@ -176,13 +176,16 @@ Permite enviar eventos y mensajes en tiempo real desde el backend hacia clientes
 
 El bot aprende fragmentos aleatorios de hasta 30 palabras consecutivas de los
 mensajes del chat. Una tarea periódica del bot publica automáticamente una frase
-en cada canal conectado que tenga datos, cada 5 minutos por defecto. No utiliza
+en cada canal conectado que tenga datos y esté en directo, cada 5 minutos por defecto. No utiliza
 un comando. Puedes cambiar el intervalo con `Markov:IntervalSeconds` en la
 configuración o la variable de entorno `Markov__IntervalSeconds` (entre 1 y 86400
 segundos). El primer envío se realiza después del primer intervalo; los canales
 sin datos se omiten. Los comandos y los mensajes del propio bot no se usan como
 entrenamiento. La tarea se cancela al detener el bot y omite los envíos mientras
 está desconectado.
+Antes de cada envío consulta el estado del directo en Twitch. Si el canal está
+offline o la consulta falla, omite ese envío y vuelve a comprobarlo en el siguiente
+intervalo. Esta consulta usa las credenciales de aplicación de Twitch existentes.
 
 Los modelos se mantienen únicamente en memoria, separados por canal, y se vacían
 cada hora desde el arranque del servicio (también si no hay actividad). Reiniciar

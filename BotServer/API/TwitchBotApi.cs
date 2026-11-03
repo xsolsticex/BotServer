@@ -218,6 +218,14 @@ namespace BotServer.API
 
         public async Task<string> GetAppToken() => await _authService.GetAppToken();
 
+        public async Task<bool> IsChannelLiveAsync(string channel)
+        {
+            var token = await GetAppToken();
+            var response = await _api.Helix.Streams.GetStreamsAsync(
+                userLogins: new List<string> { channel }, accessToken: token);
+            return response.Streams.Any(stream => stream.Type == "live");
+        }
+
         public async Task<Users?> GetUserData(string username)
         {
             try

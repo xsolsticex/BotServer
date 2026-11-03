@@ -74,7 +74,8 @@ public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
     }
 
     public async Task RunPostingAsync(TimeSpan interval, Func<IEnumerable<string>> joinedChannels,
-        Func<string, string, Task> send, CancellationToken cancellationToken)
+        Func<string, string, Task> send, Func<string, Task<bool>> isLive,
+        CancellationToken cancellationToken)
     {
         using var timer = new PeriodicTimer(interval, clock);
         while (await timer.WaitForNextTickAsync(cancellationToken))
@@ -83,7 +84,11 @@ public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var phrase = Generate(channel);
-                if (!string.IsNullOrWhiteSpace(phrase)) await send(channel, phrase);
+                if (!string.IsNullOrWhiteSpace(phrase) && await isLive(channel))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await send(channel, phrase);
+                }
             }
         }
     }

@@ -138,6 +138,19 @@ namespace BotServer.TwitchBotClient
                         {
                             _logger.LogWarning(ex, "Could not send Markov message to {Channel}.", channel);
                         }
+                    }, async channel =>
+                    {
+                        try
+                        {
+                            using var scope = _scope.CreateScope();
+                            return await scope.ServiceProvider.GetRequiredService<TwitchBotApi>()
+                                .IsChannelLiveAsync(channel);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not check live status for {Channel}; skipping Markov message.", channel);
+                            return false;
+                        }
                     }, stoppingToken);
             }
             catch (OperationCanceledException)

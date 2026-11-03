@@ -64,15 +64,21 @@ var postingClock = new ManualClock(TimeSpan.FromMinutes(5));
 using var automatic = new MarkovChatService(postingClock);
 automatic.Learn("joined", "hola chat");
 automatic.Learn("left", "no publicar");
+automatic.Learn("offline", "canal apagado");
 using var stopPosting = new CancellationTokenSource();
 var sent = new List<(string Channel, string Phrase)>();
 var posted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-var posting = automatic.RunPostingAsync(TimeSpan.FromMinutes(5), () => ["joined", "empty"],
+var checkedChannels = new List<string>();
+var posting = automatic.RunPostingAsync(TimeSpan.FromMinutes(5), () => ["offline", "joined", "empty"],
     (channel, phrase) =>
     {
         sent.Add((channel, phrase));
         posted.TrySetResult();
         return Task.CompletedTask;
+    }, channel =>
+    {
+        checkedChannels.Add(channel);
+        return Task.FromResult(channel == "joined");
     }, stopPosting.Token);
 await postingClock.Ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
 Check(sent.Count == 0, "No automatic post before the interval");
@@ -82,6 +88,7 @@ stopPosting.Cancel();
 try { await posting; }
 catch (OperationCanceledException) when (stopPosting.IsCancellationRequested) { }
 Check(sent.Count == 1 && sent[0] == ("joined", "hola chat"), "Periodic post only to joined channels with learned data");
+Check(checkedChannels.SequenceEqual(new[] { "offline", "joined" }), "Check live status before sending and skip offline channels");
 postingClock.FireHourlyTick();
 Check(sent.Count == 1, "Posting stops on cancellation");
 Console.WriteLine($"{passed} checks passed.");
