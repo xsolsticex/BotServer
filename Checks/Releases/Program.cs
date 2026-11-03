@@ -31,6 +31,20 @@ Check(games[0].ImageUrl == "https://images.igdb.com/igdb/image/upload/t_cover_bi
 var noCover = dates[0] with { Game = dates[0].Game! with { Cover = new("https://untrusted.test/image.jpg") } };
 Check(WeeklyReleaseService.BuildGames([noCover], week)[0].ImageUrl == null, "Untrusted cover URLs use the fallback");
 
+var modernJson = """
+    [{"date":TIMESTAMP,"date_format":{"id":1,"format":"YYYYMMMMDD"},
+      "game":{"id":11,"name":"Modern IGDB game"},"platform":{"id":6,"name":"PC"}}]
+    """.Replace("TIMESTAMP", week.From.ToUnixTimeSeconds().ToString());
+var modern = JsonSerializer.Deserialize<List<IgdbReleaseDate>>(modernJson,
+    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+Check(WeeklyReleaseService.BuildGames(modern, week).Count == 1 && modern[0].Category == null,
+    "Current IGDB date_format responses work without the deprecated category field");
+Check(WeeklyReleaseService.BuildGames([modern[0] with { DateFormat = new("YYYY-MM-DD") }], week).Count == 1,
+    "Exact dates with separators are supported");
+Check(WeeklyReleaseService.BuildGames([modern[0] with { Category = 0, DateFormat = new("YYYYMMMM") }], week).Count == 0
+    && WeeklyReleaseService.BuildGames([modern[0] with { DateFormat = null }], week).Count == 0,
+    "Monthly or unknown precision is never mistaken for an exact release day");
+
 var source = new FakeIgdb { Rows = dates };
 var service = new WeeklyReleaseService(source, clock, NullLogger<WeeklyReleaseService>.Instance);
 var concurrent = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => service.GetAsync()));
@@ -49,6 +63,10 @@ Check(source.Calls == calls, "Failure backoff prevents repeated upstream request
 source.Fail = false; source.Rows = [];
 clock.Advance(TimeSpan.FromMinutes(1));
 Check((await service.GetAsync()).Games.Count == 0, "Empty week is a valid result, not an API error");
+calls = source.Calls;
+clock.Advance(TimeSpan.FromMinutes(10));
+await service.GetAsync();
+Check(source.Calls == calls + 1, "Empty weeks refresh after ten minutes instead of three hours");
 
 var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
     ["CLIENT_ID"] = "test-client", ["CLIENT_SECRET"] = "test-secret"
@@ -59,9 +77,9 @@ var response = await client.GetReleaseDatesAsync(week, CancellationToken.None);
 await client.GetReleaseDatesAsync(week, CancellationToken.None);
 Check(response.Count == 1 && transport.TokenRequests == 1 && transport.ApiRequests == 2,
     "OAuth token is reused across IGDB requests");
-Check(transport.Queries.All(query => query.Contains("category = 0") && query.Contains("limit 500")
+Check(transport.Queries.All(query => query.Contains("date_format.format") && !query.Contains("category") && query.Contains("limit 500")
     && query.Contains($"date >= {week.From.ToUnixTimeSeconds()}") && query.Contains($"date < {week.Until.ToUnixTimeSeconds()}")),
-    "IGDB query uses exact-day releases and bounded calendar timestamps");
+    "IGDB query uses the current date_format relation without deprecated category filters");
 transport.Unauthorized = true;
 await client.GetReleaseDatesAsync(week, CancellationToken.None);
 Check(transport.TokenRequests == 2, "An expired token is renewed once on HTTP 401");

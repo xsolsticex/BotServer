@@ -271,7 +271,9 @@ las plataformas que reciben ese juego durante la semana. Si las fechas varían,
 se muestran junto a cada plataforma. Las descripciones se muestran en el idioma
 que devuelve IGDB.
 
-Los resultados se almacenan en memoria durante tres horas. El overlay comprueba
+Los resultados se almacenan en memoria durante tres horas; las listas vacías se
+actualizan cada diez minutos. La precisión del día se obtiene de `date_format`,
+sin filtrar por el campo obsoleto `category`. El overlay comprueba
 actualizaciones cada 15 minutos y reintenta errores al minuto. Si falla una
 actualización, puede mostrar datos de la misma semana señalados como pendientes
 de actualización; nunca reutiliza los juegos de la semana anterior.
@@ -298,7 +300,7 @@ La ruta `/` no tiene una página de inicio configurada. Usa las rutas de overlay
 ### Comprobaciones
 
 Los programas de `Checks/` están separados de tu proyecto privado `Tests/` y
-realizan 72 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
+realizan 76 comprobaciones locales sin conectarse a Twitch, IGDB ni Spotify:
 
 ```bash
 dotnet run --project Checks/Badges/BadgeChecks.csproj

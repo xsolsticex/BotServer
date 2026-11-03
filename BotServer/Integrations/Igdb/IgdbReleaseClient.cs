@@ -36,9 +36,9 @@ public sealed class IgdbReleaseClient(IHttpClientFactory clients, IConfiguration
             var result = new List<IgdbReleaseDate>();
             for (var page = 0; page < 20; page++)
             {
-                // Exact-day releases only; monthly, quarterly and TBA dates are not calendar releases.
-                var query = $"fields date,category,game.id,game.name,game.summary,game.cover.url,platform.id,platform.name,platform.abbreviation; " +
-                    $"where date >= {week.From.ToUnixTimeSeconds()} & date < {week.Until.ToUnixTimeSeconds()} & category = 0; " +
+                // category is deprecated. Expand the current date_format relation and check precision locally.
+                var query = $"fields date,date_format.format,game.id,game.name,game.summary,game.cover.url,platform.id,platform.name,platform.abbreviation; " +
+                    $"where date >= {week.From.ToUnixTimeSeconds()} & date < {week.Until.ToUnixTimeSeconds()}; " +
                     $"sort date asc; limit 500; offset {page * 500};";
                 var rows = await RequestPageAsync(clientId, secret, query, cancellationToken);
                 result.AddRange(rows);
@@ -95,7 +95,14 @@ public sealed class IgdbReleaseClient(IHttpClientFactory clients, IConfiguration
         [property: JsonPropertyName("expires_in")] int ExpiresIn);
 }
 
-public sealed record IgdbReleaseDate(long Date, int Category, IgdbGame? Game, IgdbPlatform? Platform);
+public sealed record IgdbReleaseDate(long Date, int? Category, IgdbGame? Game, IgdbPlatform? Platform,
+    [property: JsonPropertyName("date_format")] IgdbDateFormat? DateFormat = null)
+{
+    public bool HasExactDay => DateFormat != null
+        ? string.Concat((DateFormat.Format ?? "").Where(char.IsLetter)).ToUpperInvariant() is "YYYYMMMMDD" or "YYYYMMDD"
+        : Category == 0; // Compatibility with stored fixtures/legacy responses; missing category is not zero.
+}
+public sealed record IgdbDateFormat(string? Format);
 public sealed record IgdbGame(int Id, string? Name, string? Summary, IgdbCover? Cover);
 public sealed record IgdbCover(string? Url);
 public sealed record IgdbPlatform(int Id, string? Name, string? Abbreviation);

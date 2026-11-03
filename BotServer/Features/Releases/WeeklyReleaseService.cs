@@ -30,8 +30,12 @@ public sealed class WeeklyReleaseService(IIgdbReleaseClient igdb, TimeProvider c
             {
                 var dates = await igdb.GetReleaseDatesAsync(week, cancellationToken);
                 _cached = new(key, week.End.ToString("yyyy-MM-dd"), Zone.Id, clock.GetUtcNow(), false, BuildGames(dates, week));
-                _refreshAt = clock.GetUtcNow().AddHours(3);
+                _refreshAt = clock.GetUtcNow().Add(_cached.Games.Count == 0 ? TimeSpan.FromMinutes(10) : TimeSpan.FromHours(3));
                 _retryAt = default;
+                logger.LogInformation("IGDB week {Start} to {End}: {Rows} release records, {Games} unique games.",
+                    key, _cached.WeekEnd, dates.Count, _cached.Games.Count);
+                if (dates.Count > 0 && _cached.Games.Count == 0)
+                    logger.LogWarning("IGDB returned release records but none contained an exact day and a valid game/platform.");
                 return _cached;
             }
             catch (Exception error) when (error is HttpRequestException or JsonException or IgdbConfigurationException
@@ -50,7 +54,7 @@ public sealed class WeeklyReleaseService(IIgdbReleaseClient igdb, TimeProvider c
     public static IReadOnlyList<WeeklyRelease> BuildGames(IEnumerable<IgdbReleaseDate> rows, ReleaseWeek week)
     {
         string LocalDate(long timestamp) => TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(timestamp), Zone).ToString("yyyy-MM-dd");
-        return rows.Where(row => row.Category == 0 && row.Date >= week.From.ToUnixTimeSeconds()
+        return rows.Where(row => row.HasExactDay && row.Date >= week.From.ToUnixTimeSeconds()
                 && row.Date < week.Until.ToUnixTimeSeconds() && row.Game?.Id > 0
                 && !string.IsNullOrWhiteSpace(row.Game.Name) && row.Platform?.Id > 0
                 && !string.IsNullOrWhiteSpace(row.Platform.Name))
