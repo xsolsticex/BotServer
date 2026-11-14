@@ -30,8 +30,9 @@ namespace BotServer.Extensions
 
             services.AddSingleton<OAuthService>();
             services.AddSingleton(TimeProvider.System);
-            services.AddSingleton<MarkovChatService>();
-            services.AddHostedService<MarkovChatService>(sp => sp.GetRequiredService<MarkovChatService>());
+            services.AddSingleton(sp => new MarkovChatService(
+                sp.GetRequiredService<TimeProvider>(),
+                Path.Combine(Path.GetDirectoryName(Path.GetFullPath(dbPath))!, "markov.json")));
             services.AddSingleton<TwitchBot>();
             services.AddHostedService<TwitchBot>(sp => sp.GetRequiredService<TwitchBot>());
             services.AddSingleton<BotEventHandler>();

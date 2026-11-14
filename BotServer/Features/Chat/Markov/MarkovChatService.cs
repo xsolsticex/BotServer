@@ -1,46 +1,116 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace BotServer.Features.Chat.Markov;
 
-/// <summary>Bounded, per-channel chat models. Nothing is written to disk.</summary>
-public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
+/// <summary>Bounded, per-channel chat models with optional local persistence.</summary>
+public sealed class MarkovChatService
 {
+    private readonly TimeProvider clock;
+    private readonly string? _storagePath;
+
+    public MarkovChatService(TimeProvider clock, string? storagePath = null)
+    {
+        this.clock = clock;
+        _storagePath = storagePath is null ? null : Path.GetFullPath(storagePath);
+        if (_storagePath is null || !File.Exists(_storagePath))
+        {
+            return;
+        }
+
+        var saved = JsonSerializer.Deserialize<Dictionary<string, Model>>(File.ReadAllText(_storagePath))
+            ?? throw new InvalidDataException("The Markov storage file is empty.");
+        if (saved.Count > MaxChannels)
+        {
+            throw new InvalidDataException("Too many stored Markov channels.");
+        }
+        foreach (var (channel, model) in saved)
+        {
+            if (model is null || model.Next is null || model.Starts is null
+                || model.Starts.Count == 0 || model.Next.Any(pair => pair.Value is null)
+                || model.Next.Values.Sum(next => (long)next.Count) > MaxTransitions
+                || model.Starts.Any(start => !model.Next.ContainsKey(start)))
+                throw new InvalidDataException("Invalid stored Markov model.");
+            model.Next = new(model.Next, StringComparer.OrdinalIgnoreCase);
+            model.Count = model.Next.Values.Sum(next => next.Count);
+            _channels.Add(channel, model);
+        }
+    }
+
+    private void Save()
+    {
+        if (_storagePath is null)
+        {
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(_storagePath)!);
+        var temporaryPath = _storagePath + ".tmp";
+        try
+        {
+            using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                JsonSerializer.Serialize(stream, _channels);
+                stream.Flush(flushToDisk: true);
+            }
+            File.Move(temporaryPath, _storagePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
+    }
+
     private const int MaxChannels = 64;
     private const int MaxTransitions = 4000;
-    private static readonly TimeSpan Lifetime = TimeSpan.FromHours(1);
     private readonly object _gate = new();
     private readonly Dictionary<string, Model> _channels = new(StringComparer.OrdinalIgnoreCase);
-    private long _resetAt = clock.GetTimestamp();
 
     private sealed class Model
     {
-        public Dictionary<string, List<string>> Next { get; } = new(StringComparer.OrdinalIgnoreCase);
-        public List<string> Starts { get; } = [];
+        public Model()
+        {
+        }
+        public Dictionary<string, List<string>> Next { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<string> Starts { get; set; } = [];
         public int Count { get; set; }
     }
 
     public void Learn(string channel, string message)
     {
         if (string.IsNullOrWhiteSpace(channel) || string.IsNullOrWhiteSpace(message)
-            || message.TrimStart().StartsWith('!')) return;
+            || message.TrimStart().StartsWith('!'))
+        {
+            return;
+        }
 
         // Keep adjacent words: randomly shuffling individual words loses Markov transitions.
         var words = Regex.Matches(message[..Math.Min(message.Length, 500)], @"[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*")
             .Select(match => match.Value.ToLowerInvariant()).Where(word => word.Length <= 40).Take(80).ToArray();
-        if (words.Length < 2) return;
+        if (words.Length < 2)
+        {
+            return;
+        }
         var length = Math.Min(words.Length, 30);
         var start = Random.Shared.Next(words.Length - length + 1);
 
         lock (_gate)
         {
-            ResetIfExpired();
             if (!_channels.TryGetValue(channel, out var model))
             {
-                if (_channels.Count >= MaxChannels) return;
+                if (_channels.Count >= MaxChannels)
+                {
+                    return;
+                }
                 _channels[channel] = model = new Model();
             }
-            // Stop learning at the cap until the hourly reset; existing phrases remain usable.
-            if (model.Count + length > MaxTransitions) return;
+            // Stop learning at the cap; existing phrases remain usable.
+            if (model.Count + length > MaxTransitions)
+            {
+                return;
+            }
             model.Starts.Add(words[start]);
             for (var i = start; i < start + length; i++)
             {
@@ -49,6 +119,7 @@ public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
                 next.Add(i + 1 < start + length ? words[i + 1] : string.Empty);
                 model.Count++;
             }
+            Save();
         }
     }
 
@@ -56,8 +127,10 @@ public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
     {
         lock (_gate)
         {
-            ResetIfExpired();
-            if (!_channels.TryGetValue(channel, out var model)) return null;
+            if (!_channels.TryGetValue(channel, out var model))
+            {
+                return null;
+            }
             var word = model.Starts[Random.Shared.Next(model.Starts.Count)];
             var result = new List<string>();
             var characters = 0;
@@ -93,28 +166,4 @@ public sealed class MarkovChatService(TimeProvider clock) : BackgroundService
         }
     }
 
-    private void ResetIfExpired()
-    {
-        if (clock.GetElapsedTime(_resetAt) < Lifetime) return;
-        Reset();
-    }
-
-    private void Reset()
-    {
-        _channels.Clear();
-        _resetAt = clock.GetTimestamp();
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        using var timer = new PeriodicTimer(Lifetime, clock);
-        try
-        {
-            while (await timer.WaitForNextTickAsync(stoppingToken))
-            {
-                lock (_gate) Reset();
-            }
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
-    }
 }

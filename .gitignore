@@ -365,3 +365,7 @@ FodyWeavers.xsd
 # Local Unit Tests folder
 Tests/
 /BotServer/PROJECT_ERROR_REPORT.md
+
+# Local Markov training data
+markov.json
+markov.json.tmp

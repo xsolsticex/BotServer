@@ -227,6 +227,13 @@ web se solicitan al mismo servidor que sirve el overlay.
 
 ### Frases de Markov
 
+Lo aprendido se guarda automáticamente en `markov.json`, junto a `twitch.db`,
+después de cada mensaje aprendido y se recupera al arrancar el bot. No hay
+limpieza periódica. La escritura reemplaza el archivo de forma atómica; si el
+archivo guardado no es válido, el arranque falla para evitar sobrescribirlo.
+En contenedores, conserva esa carpeta en un volumen para mantener los datos. El modelo admite hasta 64 canales y 4000 transiciones por canal; al
+alcanzar ese límite deja de aprender en ese canal y conserva las frases existentes.
+
 El bot aprende fragmentos aleatorios de hasta 30 palabras consecutivas de los
 mensajes del chat. Una tarea periódica del bot publica automáticamente una frase
 en cada canal conectado que tenga datos y esté en directo, cada 5 minutos por defecto. No utiliza
