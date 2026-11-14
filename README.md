@@ -228,7 +228,9 @@ web se solicitan al mismo servidor que sirve el overlay.
 ### Frases de Markov
 
 Lo aprendido se guarda automáticamente en `markov.json`, junto a `twitch.db`,
-después de cada mensaje aprendido y se recupera al arrancar el bot. No hay
+después de cada mensaje aprendido y se recupera al arrancar el bot. El archivo se
+crea al iniciar, incluso sin mensajes, y el registro muestra su ruta absoluta
+(normalmente `bin/Debug/net10.0/markov.json` al ejecutar en desarrollo). No hay
 limpieza periódica. La escritura reemplaza el archivo de forma atómica; si el
 archivo guardado no es válido, el arranque falla para evitar sobrescribirlo.
 En contenedores, conserva esa carpeta en un volumen para mantener los datos. El modelo admite hasta 64 canales y 4000 transiciones por canal; al

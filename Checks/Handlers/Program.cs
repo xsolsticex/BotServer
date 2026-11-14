@@ -95,6 +95,10 @@ try
         "Router preserves the overlay payload, profile, badges and default color");
     Check(provider.GetRequiredService<MarkovChatService>().Generate("one") == "hola mundo",
         "User messages still train the channel's Markov model");
+    var storagePath = Path.Combine(directory, "markov.json");
+    Check(File.Exists(storagePath), "Message router persists Markov in the database directory");
+    var restored = new MarkovChatService(TimeProvider.System, storagePath);
+    Check(restored.Generate("one") == "hola mundo", "Messages from another account survive restarting Markov");
     Console.WriteLine($"{passed} checks passed.");
 }
 finally

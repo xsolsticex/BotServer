@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace BotServer.Features.Chat.Markov;
 
@@ -8,13 +9,18 @@ public sealed class MarkovChatService
 {
     private readonly TimeProvider clock;
     private readonly string? _storagePath;
+    private readonly ILogger<MarkovChatService>? _logger;
 
-    public MarkovChatService(TimeProvider clock, string? storagePath = null)
+    public MarkovChatService(TimeProvider clock, string? storagePath = null, ILogger<MarkovChatService>? logger = null)
     {
         this.clock = clock;
+        _logger = logger;
         _storagePath = storagePath is null ? null : Path.GetFullPath(storagePath);
-        if (_storagePath is null || !File.Exists(_storagePath))
+        if (_storagePath is null) return;
+        if (!File.Exists(_storagePath))
         {
+            Save();
+            _logger?.LogInformation("Created Markov storage at {Path}", _storagePath);
             return;
         }
 
@@ -35,6 +41,7 @@ public sealed class MarkovChatService
             model.Count = model.Next.Values.Sum(next => next.Count);
             _channels.Add(channel, model);
         }
+        _logger?.LogInformation("Loaded {Channels} Markov channels from {Path}", _channels.Count, _storagePath);
     }
 
     private void Save()
@@ -53,6 +60,11 @@ public sealed class MarkovChatService
                 stream.Flush(flushToDisk: true);
             }
             File.Move(temporaryPath, _storagePath, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger?.LogError(ex, "Could not save Markov storage at {Path}", _storagePath);
+            throw;
         }
         finally
         {
@@ -120,6 +132,7 @@ public sealed class MarkovChatService
                 model.Count++;
             }
             Save();
+            _logger?.LogDebug("Saved Markov training for {Channel} to {Path}", channel, _storagePath);
         }
     }
 

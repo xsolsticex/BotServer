@@ -85,6 +85,7 @@ var storagePath = Path.Combine(storageDirectory, "markov.json");
 try
 {
     var persistent = new MarkovChatService(TimeProvider.System, storagePath);
+    Check(File.Exists(storagePath) && File.ReadAllText(storagePath) == "{}", "Create empty storage on startup before any messages");
     persistent.Learn("A", "hola mundo");
     persistent.Learn("b", "otro canal");
     Check(File.Exists(storagePath) && !File.Exists(storagePath + ".tmp"), "Save learned data atomically to disk");
