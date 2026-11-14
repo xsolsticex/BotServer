@@ -139,6 +139,27 @@ public sealed class MarkovChatService
         }
     }
 
+    public void ClearChannel(string channel)
+    {
+        lock (_gate)
+        {
+            _channels.Remove(channel, out var previous);
+            try
+            {
+                Save();
+            }
+            catch
+            {
+                if (previous is not null)
+                {
+                    _channels[channel] = previous;
+                }
+                throw;
+            }
+            _logger?.LogInformation("Cleared Markov model for {Channel}", channel);
+        }
+    }
+
     public string? Generate(string channel)
     {
         lock (_gate)

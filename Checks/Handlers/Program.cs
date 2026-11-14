@@ -99,6 +99,23 @@ try
     Check(File.Exists(storagePath), "Message router persists Markov in the database directory");
     var restored = new MarkovChatService(TimeProvider.System, storagePath);
     Check(restored.Generate("one") == "hola mundo", "Messages from another account survive restarting Markov");
+    using (var scope = provider.CreateScope())
+    {
+        var commands = scope.ServiceProvider.GetRequiredService<BotCommandHandler>();
+        var markov = provider.GetRequiredService<MarkovChatService>();
+        markov.Learn("other", "otro canal");
+        await commands.HandleAsync(new OnChatCommandReceivedArgs(Message("!new", "person"), new CommandInfo("!", "new", "", [])), null);
+        Check(markov.Generate("one") == "hola mundo", "New command rejects non-owners");
+        await commands.HandleAsync(new OnChatCommandReceivedArgs(Message("!new", "ONE"), new CommandInfo("!", "new", "", [])), null);
+        var afterClear = new MarkovChatService(TimeProvider.System, storagePath);
+        Check(markov.Generate("one") == null && afterClear.Generate("one") == null,
+            "New command clears owner channel in memory and on disk");
+        Check(afterClear.Generate("other") == "otro canal", "New command preserves other channels");
+        await commands.HandleAsync(new OnChatCommandReceivedArgs(Message("!new", "one"), new CommandInfo("!", "new", "", [])), null);
+        markov.Learn("one", "nuevo mensaje");
+        Check(new MarkovChatService(TimeProvider.System, storagePath).Generate("one") == "nuevo mensaje",
+            "Repeated clearing is safe and learning resumes");
+    }
     Console.WriteLine($"{passed} checks passed.");
 }
 finally

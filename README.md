@@ -227,6 +227,10 @@ web se solicitan al mismo servidor que sirve el overlay.
 
 ### Frases de Markov
 
+El propietario puede ejecutar `!new` en su canal para borrar su modelo de Markov
+en memoria y en el archivo local. Los demás canales se conservan y el bot vuelve
+a aprender con los siguientes mensajes.
+
 Lo aprendido se guarda automáticamente en `markov.json`, junto a `twitch.db`,
 después de cada mensaje aprendido y se recupera al arrancar el bot. El archivo se
 crea al iniciar, incluso sin mensajes, y el registro muestra su ruta absoluta

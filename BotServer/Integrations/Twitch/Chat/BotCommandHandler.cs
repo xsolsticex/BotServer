@@ -1,4 +1,5 @@
 using BotServer.Integrations.Twitch;
+using BotServer.Features.Chat.Markov;
 using BotServer.Configuration;
 using BotServer.Data.Services;
 using BotServer.Web.SignalR;
@@ -9,12 +10,14 @@ namespace BotServer.Integrations.Twitch.Chat
 {
     public class BotCommandHandler
     {
+        private readonly MarkovChatService _markov;
         private readonly TwitchBotApi _api;
         private readonly ChannelsService _channels;
         private readonly IBotSignalRClient _signalR;
 
-        public BotCommandHandler(TwitchBotApi api, ChannelsService channels, IBotSignalRClient signalR)
+        public BotCommandHandler(TwitchBotApi api, ChannelsService channels, IBotSignalRClient signalR, MarkovChatService markov)
         {
+            _markov = markov;
             _api = api;
             _channels = channels;
             _signalR = signalR;
@@ -30,6 +33,32 @@ namespace BotServer.Integrations.Twitch.Chat
 
             switch (command.ToLowerInvariant())
             {
+                case "new":
+                    if (!username.Equals(channel, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (client is not null)
+                        {
+                            await client.SendReplyAsync(channel, messageID, "Solo el propietario del canal puede limpiar Markov.");
+                        }
+                        break;
+                    }
+                    try
+                    {
+                        _markov.ClearChannel(channel);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        if (client is not null)
+                        {
+                            await client.SendReplyAsync(channel, messageID, "No se pudo guardar la limpieza de Markov. Revisa el registro del bot.");
+                        }
+                        break;
+                    }
+                    if (client is not null)
+                    {
+                        await client.SendReplyAsync(channel, messageID, "Markov de este canal se ha limpiado. Aprenderé de los nuevos mensajes.");
+                    }
+                    break;
                 case "hora":
                     await HandleTimeCommand(channel);
                     break;
@@ -56,7 +85,7 @@ namespace BotServer.Integrations.Twitch.Chat
                 case "help":
                     if (client != null)
                     {
-                        await client.SendReplyAsync(channel, messageID, "Comandos: Test: !hora, Unir a canal: !join, Url contador: !counter, Url estado: !status, Url chat: !chat, Comandos contador: !win, !lose, !reset");
+                        await client.SendReplyAsync(channel, messageID, "Comandos: Test: !hora, Unir a canal: !join, Url contador: !counter, Url estado: !status, Url chat: !chat, Comandos contador: !win, !lose, !reset; Limpiar Markov del canal (propietario): !new");
                     }
                     break;
             }
