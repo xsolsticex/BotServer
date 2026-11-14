@@ -26,6 +26,8 @@ namespace BotServer.Integrations.Twitch.Chat
         private readonly TimeSpan _markovInterval;
         private string? _mainChannel;
 
+        public bool isLocal { get; set; } = true;
+
         public TwitchBot(
             BotEventHandler events,
             IServiceScopeFactory scope,
@@ -85,12 +87,12 @@ namespace BotServer.Integrations.Twitch.Chat
 
         public async Task InitializeTwitch()
         {
-            _mainChannel = Environment.GetEnvironmentVariable("MAIN_CHANNEL") ?? "xhipibotx";
+            _mainChannel = Environment.GetEnvironmentVariable("MAIN_CHANNEL");
 
             using var fscope = _scope.CreateScope();
             var fac = fscope.ServiceProvider.GetRequiredService<TwitchClientFactory>();
 
-            _client = await fac.Create(_mainChannel, false);
+            _client = await fac.Create(_mainChannel, isLocal);
 
             RegisterEvents();
             _events.Initialize(_client);
