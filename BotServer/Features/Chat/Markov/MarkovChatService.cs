@@ -103,6 +103,7 @@ public sealed class MarkovChatService
             .Select(match => match.Value.ToLowerInvariant()).Where(word => word.Length <= 40).Take(80).ToArray();
         if (words.Length < 2)
         {
+            _logger?.LogInformation("Markov skipped message in {Channel}: fewer than two valid words", channel);
             return;
         }
         var length = Math.Min(words.Length, 30);
@@ -114,6 +115,7 @@ public sealed class MarkovChatService
             {
                 if (_channels.Count >= MaxChannels)
                 {
+                    _logger?.LogWarning("Markov skipped channel {Channel}: channel limit reached", channel);
                     return;
                 }
                 _channels[channel] = model = new Model();
@@ -121,6 +123,7 @@ public sealed class MarkovChatService
             // Stop learning at the cap; existing phrases remain usable.
             if (model.Count + length > MaxTransitions)
             {
+                _logger?.LogInformation("Markov skipped learning in {Channel}: transition limit reached", channel);
                 return;
             }
             model.Starts.Add(words[start]);
@@ -132,7 +135,7 @@ public sealed class MarkovChatService
                 model.Count++;
             }
             Save();
-            _logger?.LogDebug("Saved Markov training for {Channel} to {Path}", channel, _storagePath);
+            _logger?.LogInformation("Markov learned {Transitions} transitions in {Channel}; storage: {Path}", length, channel, _storagePath);
         }
     }
 
